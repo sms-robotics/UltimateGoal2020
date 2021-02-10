@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
@@ -9,7 +10,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -22,7 +22,7 @@ public class UltimateAuton extends LinearOpMode {
     private static final double TICKS_PER_MILLIMETER = 8.0;
     private static final double TURN_POWER = 0.5;
     private static final double DRIVE_DISTANCE_POWER = 0.5;
-    private static final double TURN_ERROR_THRESHOLD = 1.0;
+    private static final double TURN_ERROR_THRESHOLD = 0.2;
 
     /* Declare OpMode members. */
     UltimateHardware robot = new UltimateHardware();   // Use a Pushbot's hardware
@@ -30,13 +30,21 @@ public class UltimateAuton extends LinearOpMode {
 
     List<Instruction> instructions = Arrays.asList(
             new Instruction(DRIVE_DISTANCE, 100, 0),
-            new Instruction(TURN_TO, 90),
+            new Instruction(TURN_TO, -90),
             new Instruction(DRIVE_DISTANCE, 100, 0),
             new Instruction(TURN_TO, 180),
             new Instruction(DRIVE_DISTANCE, 100, 0),
+            new Instruction(TURN_TO, 90),
+            new Instruction(DRIVE_DISTANCE, 100, 0),
+            new Instruction(TURN_TO, 0),
+            new Instruction(DRIVE_DISTANCE, 100, 0),
             new Instruction(TURN_TO, -90),
             new Instruction(DRIVE_DISTANCE, 100, 0),
-            new Instruction(TURN, 0)
+            new Instruction(TURN_TO, 180),
+            new Instruction(DRIVE_DISTANCE, 100, 0),
+            new Instruction(TURN_TO, 90),
+            new Instruction(DRIVE_DISTANCE, 100, 0),
+            new Instruction(TURN_TO, 0)
     );
 
     @Override
@@ -101,6 +109,8 @@ public class UltimateAuton extends LinearOpMode {
         telemetry.addData("Drive for distance: ", distanceMm);
         telemetry.update();
 
+        setStraightDrivingModes();
+
         // TODO: Use real angle - Starting out with angle == 0
         int targetPositionForward = (int)(distanceMm * TICKS_PER_MILLIMETER);
         int targetPositionRight = 0;
@@ -164,6 +174,7 @@ public class UltimateAuton extends LinearOpMode {
         robot.rearRightDrive.setTargetPosition(rearRightTarget);
         robot.rearLeftDrive.setTargetPosition(rearLeftTarget);
 
+
         // TODO: Ease into movement instead of going directly to max power.
         robot.frontRightDrive.setPower(TURN_POWER);
         robot.frontLeftDrive.setPower(TURN_POWER);
@@ -177,40 +188,84 @@ public class UltimateAuton extends LinearOpMode {
         }
     }
 
+    public void startTurningLeft(double power) {
+        robot.frontRightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        robot.frontLeftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        robot.rearRightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        robot.rearLeftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        robot.frontRightDrive.setDirection(DcMotorSimple.Direction.FORWARD);
+        robot.frontLeftDrive.setDirection(DcMotorSimple.Direction.FORWARD);
+        robot.rearRightDrive.setDirection(DcMotorSimple.Direction.FORWARD);
+        robot.rearLeftDrive.setDirection(DcMotorSimple.Direction.FORWARD);
+
+        robot.frontRightDrive.setPower(power);
+        robot.frontLeftDrive.setPower(power);
+        robot.rearRightDrive.setPower(power);
+        robot.rearLeftDrive.setPower(power);
+    }
+    public void startTurningRight(double power) {
+        robot.frontRightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        robot.frontLeftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        robot.rearRightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        robot.rearLeftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        robot.frontRightDrive.setDirection(DcMotorSimple.Direction.REVERSE);
+        robot.frontLeftDrive.setDirection(DcMotorSimple.Direction.REVERSE);
+        robot.rearRightDrive.setDirection(DcMotorSimple.Direction.REVERSE);
+        robot.rearLeftDrive.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        robot.frontRightDrive.setPower(power);
+        robot.frontLeftDrive.setPower(power);
+        robot.rearRightDrive.setPower(power);
+        robot.rearLeftDrive.setPower(power);
+    }
+    public void stopWheels() {
+        robot.frontRightDrive.setPower(0);
+        robot.frontLeftDrive.setPower(0);
+        robot.rearRightDrive.setPower(0);
+        robot.rearLeftDrive.setPower(0);
+    }
+
 
     public void turnTo(double degrees) {
         telemetry.addData("Turning To: ", degrees);
         telemetry.addData("encoder pos ", robot.frontRightDrive.getCurrentPosition());
         telemetry.update();
 
-        int targetPosition = (int)(degrees * TURN_TICKS_PER_DEGREE);
-        int frontRightTarget = robot.frontRightDrive.getCurrentPosition() - (int)(targetPosition);
-        int frontLeftTarget = robot.frontLeftDrive.getCurrentPosition() + (int)(targetPosition);
-        int rearRightTarget = robot.rearRightDrive.getCurrentPosition() - (int)(targetPosition);
-        int rearLeftTarget = robot.rearLeftDrive.getCurrentPosition() + (int)(targetPosition);
-
-        robot.frontRightDrive.setTargetPosition(frontRightTarget);
-        robot.frontLeftDrive.setTargetPosition(frontLeftTarget);
-        robot.rearRightDrive.setTargetPosition(rearRightTarget);
-        robot.rearLeftDrive.setTargetPosition(rearLeftTarget);
-
         // TODO: Ease into movement instead of going directly to max power.
-        robot.frontRightDrive.setPower(TURN_POWER);
-        robot.frontLeftDrive.setPower(TURN_POWER);
-        robot.rearRightDrive.setPower(TURN_POWER);
-        robot.rearLeftDrive.setPower(TURN_POWER);
 
-        while (opModeIsActive() && (robot.frontRightDrive.isBusy() || robot.frontLeftDrive.isBusy() || robot.rearRightDrive.isBusy() || robot.rearLeftDrive.isBusy() )) {
+        double error = getError(degrees);
+
+        double turnPower = TURN_POWER;
+
+        if (error > 0) {
+            startTurningLeft(turnPower);
+        } else {
+            startTurningRight(turnPower);
+        }
+        while (opModeIsActive()) {
             // Update telemetry & Allow time for other processes to run
+            error = getError(degrees);
+
+            if (Math.abs(error) < 15 && turnPower > TURN_POWER * .2) {
+                turnPower *= .95;
+                robot.frontRightDrive.setPower(turnPower);
+                robot.frontLeftDrive.setPower(turnPower);
+                robot.rearRightDrive.setPower(turnPower);
+                robot.rearLeftDrive.setPower(turnPower);
+            }
+
+            telemetry.addData("Error is: ", error);
             telemetry.update();
-            double error = getError(degrees);
             if (Math.abs(error) < TURN_ERROR_THRESHOLD) {
-                robot.frontRightDrive.setPower(0);
-                robot.frontLeftDrive.setPower(0);
-                robot.rearRightDrive.setPower(0);
-                robot.rearLeftDrive.setPower(0);
+                stopWheels();
                 idle();
                 break;
+            } else if (error > 0) {
+                startTurningLeft(turnPower);
+            } else {
+                startTurningRight(turnPower);
             }
             idle();
         }
@@ -231,6 +286,16 @@ public class UltimateAuton extends LinearOpMode {
         robot.rearLeftDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
     }
 
+    public void setStraightDrivingModes() {
+        robot.frontRightDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.frontLeftDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.rearRightDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.rearLeftDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.frontRightDrive.setDirection(DcMotorSimple.Direction.FORWARD);
+        robot.frontLeftDrive.setDirection(DcMotorSimple.Direction.REVERSE);
+        robot.rearRightDrive.setDirection(DcMotorSimple.Direction.FORWARD);
+        robot.rearLeftDrive.setDirection(DcMotorSimple.Direction.REVERSE);
+    }
 
     interface Action {
         void execute(UltimateAuton ua, double... parameters);
