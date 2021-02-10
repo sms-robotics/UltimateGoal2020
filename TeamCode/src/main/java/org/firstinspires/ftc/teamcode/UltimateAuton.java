@@ -5,6 +5,16 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.firstinspires.ftc.teamcode.UltimateAuton.InstructionType.*;
+
 @Autonomous(name="Auton", group="Pushbot")
 public class UltimateAuton extends LinearOpMode {
 
@@ -12,17 +22,29 @@ public class UltimateAuton extends LinearOpMode {
     private static final double TICKS_PER_MILLIMETER = 8.0;
     private static final double TURN_POWER = 0.5;
     private static final double DRIVE_DISTANCE_POWER = 0.5;
+    private static final double TURN_ERROR_THRESHOLD = 1.0;
 
     /* Declare OpMode members. */
     UltimateHardware robot = new UltimateHardware();   // Use a Pushbot's hardware
     ElapsedTime runtime = new ElapsedTime();
+
+    List<Instruction> instructions = Arrays.asList(
+            new Instruction(DRIVE_DISTANCE, 100, 0),
+            new Instruction(TURN_TO, 90),
+            new Instruction(DRIVE_DISTANCE, 100, 0),
+            new Instruction(TURN_TO, 180),
+            new Instruction(DRIVE_DISTANCE, 100, 0),
+            new Instruction(TURN_TO, -90),
+            new Instruction(DRIVE_DISTANCE, 100, 0),
+            new Instruction(TURN, 0)
+    );
 
     @Override
     public void runOpMode() {
         /* Initialize the hardware variables.
          * The init() method of the hardware class does all the work here
          */
-        robot.init(hardwareMap, false);
+        robot.init(hardwareMap, true);
         //move to hardware code and only run in AUTON
 
         // Send telemetry message to signify robot waiting;
@@ -31,34 +53,51 @@ public class UltimateAuton extends LinearOpMode {
         float powerReducer = 0.5f;
         // Wait for the game to start (driver presses PLAY)
 
+
+        int instructionIndex = 0;
+
+        // Assuming we're not going to mix and match modes for now.
+        setRunToPositionMode();
         waitForStart();
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
-//            driveForTime(0.5, 0, 1000);
-//            turn(90);
-//            driveForTime(0.5, 0, 1000);
-//            turn(90);
-//            driveForTime(0.5, 0, 1000);
-//            turn(90);
-//            driveForTime(0.5, 0, 1000);
-//            turn(90);
+            double error = getError(0);
+            telemetry.addData("direction from 0: ", error);
 
-            driveDistance(100, 0);
-            turn(90);
-            driveDistance(100, 0);
-            turn(90);
-            driveDistance(100, 0);
-            turn(90);
-            driveDistance(100, 0);
-            turn(90);
-            break;
+            if (instructionIndex >= instructions.size()) {
+                telemetry.addData("No more instructions", "");
+            } else {
+                Instruction currentInstruction = instructions.get(instructionIndex);
+                telemetry.addData("Current Instruction: ", currentInstruction.instructionType.name());
+                currentInstruction.execute(this);
+                instructionIndex++;
+            }
+            telemetry.update();
+            idle();
         }
+    }
+
+
+    /*
+     * getError determines the error between the target angle and the robot's current heading
+     *
+     * @param targetAngle Desired angle (in degrees relative to global reference established at last Gyro Reset).
+     * @return error angle: Degrees in the range +/- 180. Centered on the robot's frame of reference
+     * +ve error means the robot should turn LEFT (CCW) to reduce error.
+     */
+
+    public double getError(double targetAngle) {
+        double robotError;
+        // calculate error in -179 to +180 range  (
+        robotError = targetAngle - robot.imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
+        while (robotError > 180) robotError -= 360;
+        while (robotError <= -180) robotError += 360;
+        return robotError;
     }
 
     public void driveDistance(double distanceMm, double angle)
     {
-        setRunToPositionMode();
         telemetry.addData("Drive for distance: ", distanceMm);
         telemetry.update();
 
@@ -89,7 +128,6 @@ public class UltimateAuton extends LinearOpMode {
 
     public void driveForTime(double forward, double right, double msToRun)
     {
-        setRunUsingEncoderMode();
         telemetry.update();
 
         robot.frontRightDrive.setPower(forward + right);
@@ -115,7 +153,6 @@ public class UltimateAuton extends LinearOpMode {
         telemetry.addData("encoder pos ", robot.frontRightDrive.getCurrentPosition());
         telemetry.update();
 
-        setRunToPositionMode();
         int targetPosition = (int)(degrees * TURN_TICKS_PER_DEGREE);
         int frontRightTarget = robot.frontRightDrive.getCurrentPosition() - (int)(targetPosition);
         int frontLeftTarget = robot.frontLeftDrive.getCurrentPosition() + (int)(targetPosition);
@@ -140,6 +177,46 @@ public class UltimateAuton extends LinearOpMode {
         }
     }
 
+
+    public void turnTo(double degrees) {
+        telemetry.addData("Turning To: ", degrees);
+        telemetry.addData("encoder pos ", robot.frontRightDrive.getCurrentPosition());
+        telemetry.update();
+
+        int targetPosition = (int)(degrees * TURN_TICKS_PER_DEGREE);
+        int frontRightTarget = robot.frontRightDrive.getCurrentPosition() - (int)(targetPosition);
+        int frontLeftTarget = robot.frontLeftDrive.getCurrentPosition() + (int)(targetPosition);
+        int rearRightTarget = robot.rearRightDrive.getCurrentPosition() - (int)(targetPosition);
+        int rearLeftTarget = robot.rearLeftDrive.getCurrentPosition() + (int)(targetPosition);
+
+        robot.frontRightDrive.setTargetPosition(frontRightTarget);
+        robot.frontLeftDrive.setTargetPosition(frontLeftTarget);
+        robot.rearRightDrive.setTargetPosition(rearRightTarget);
+        robot.rearLeftDrive.setTargetPosition(rearLeftTarget);
+
+        // TODO: Ease into movement instead of going directly to max power.
+        robot.frontRightDrive.setPower(TURN_POWER);
+        robot.frontLeftDrive.setPower(TURN_POWER);
+        robot.rearRightDrive.setPower(TURN_POWER);
+        robot.rearLeftDrive.setPower(TURN_POWER);
+
+        while (opModeIsActive() && (robot.frontRightDrive.isBusy() || robot.frontLeftDrive.isBusy() || robot.rearRightDrive.isBusy() || robot.rearLeftDrive.isBusy() )) {
+            // Update telemetry & Allow time for other processes to run
+            telemetry.update();
+            double error = getError(degrees);
+            if (Math.abs(error) < TURN_ERROR_THRESHOLD) {
+                robot.frontRightDrive.setPower(0);
+                robot.frontLeftDrive.setPower(0);
+                robot.rearRightDrive.setPower(0);
+                robot.rearLeftDrive.setPower(0);
+                idle();
+                break;
+            }
+            idle();
+        }
+    }
+
+
     public void setRunUsingEncoderMode() {
         robot.frontRightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         robot.frontLeftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -152,6 +229,57 @@ public class UltimateAuton extends LinearOpMode {
         robot.frontLeftDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         robot.rearRightDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         robot.rearLeftDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+    }
+
+
+    interface Action {
+        void execute(UltimateAuton ua, double... parameters);
+    }
+
+    class Instruction {
+        public InstructionType instructionType;
+        public double parameters[];
+
+        Instruction(InstructionType it, double... parameters) {
+            this.instructionType = it;
+            this.parameters = parameters;
+        }
+
+        public void execute(UltimateAuton ua) {
+            this.instructionType.action.execute(ua, this.parameters);
+        }
+    }
+
+    enum InstructionType {
+        DRIVE_FOR_TIME(new Action() {
+            @Override
+            public void execute(UltimateAuton ua, double... parameters) {
+                ua.driveForTime(parameters[0], parameters[1], parameters[2]);
+            }
+        }),
+        DRIVE_DISTANCE(new Action() {
+            @Override
+            public void execute(UltimateAuton ua, double... parameters) {
+                ua.driveDistance(parameters[0], parameters[1]);
+            }
+        }),
+        TURN(new Action() {
+            @Override
+            public void execute(UltimateAuton ua, double... parameters) {
+                ua.turn(parameters[0]);
+            }
+        }),
+        TURN_TO(new Action() {
+            @Override
+            public void execute(UltimateAuton ua, double... parameters) {
+                ua.turnTo(parameters[0]);
+            }
+        });
+
+        public Action action;
+        InstructionType(Action action) {
+            this.action = action;
+        }
     }
 
 }
