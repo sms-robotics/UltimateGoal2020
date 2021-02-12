@@ -13,7 +13,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.firstinspires.ftc.teamcode.UltimateAuton.InstructionType.*;
+import static org.firstinspires.ftc.teamcode.Instruction.InstructionType.*;
 
 @Autonomous(name="Auton", group="Pushbot")
 public class UltimateAuton extends LinearOpMode {
@@ -29,22 +29,15 @@ public class UltimateAuton extends LinearOpMode {
     ElapsedTime runtime = new ElapsedTime();
 
     List<Instruction> instructions = Arrays.asList(
+            new Instruction(DRIVE_DISTANCE, 100, -135),
+            new Instruction(DRIVE_DISTANCE, 100, 45),
+            new Instruction(DRIVE_DISTANCE, 100, 135),
+            new Instruction(DRIVE_DISTANCE, 100, -45),
+            new Instruction(DRIVE_DISTANCE, 100, 45),
             new Instruction(DRIVE_DISTANCE, 100, 0),
-            new Instruction(TURN_TO, -90),
-            new Instruction(DRIVE_DISTANCE, 100, 0),
-            new Instruction(TURN_TO, 180),
-            new Instruction(DRIVE_DISTANCE, 100, 0),
-            new Instruction(TURN_TO, 90),
-            new Instruction(DRIVE_DISTANCE, 100, 0),
-            new Instruction(TURN_TO, 0),
-            new Instruction(DRIVE_DISTANCE, 100, 0),
-            new Instruction(TURN_TO, -90),
-            new Instruction(DRIVE_DISTANCE, 100, 0),
-            new Instruction(TURN_TO, 180),
-            new Instruction(DRIVE_DISTANCE, 100, 0),
-            new Instruction(TURN_TO, 90),
-            new Instruction(DRIVE_DISTANCE, 100, 0),
-            new Instruction(TURN_TO, 0)
+            new Instruction(DRIVE_DISTANCE, 100, 180),
+            new Instruction(DRIVE_DISTANCE, 100, 30),
+            new Instruction(DRIVE_DISTANCE, 100, -30)
     );
 
     @Override
@@ -112,25 +105,56 @@ public class UltimateAuton extends LinearOpMode {
         setStraightDrivingModes();
 
         // TODO: Use real angle - Starting out with angle == 0
-        int targetPositionForward = (int)(distanceMm * TICKS_PER_MILLIMETER);
-        int targetPositionRight = 0;
+
+        double radAnge = angle * Math.PI / 180.0;
+
+        double angleX = Math.sin(radAnge);
+        double angleY = Math.cos(radAnge);
+
+        telemetry.addData("angleX: ", angleX);
+        telemetry.addData("angleY: ", angleY);
+
+        int targetPositionForward = (int)(distanceMm * TICKS_PER_MILLIMETER * angleY);
+        int targetPositionRight = -(int)(distanceMm * TICKS_PER_MILLIMETER * angleX);
         int frontRightTarget = robot.frontRightDrive.getCurrentPosition() + targetPositionForward + targetPositionRight;
-        int frontLeftTarget = robot.frontLeftDrive.getCurrentPosition() + targetPositionForward - targetPositionRight ;
+        int frontLeftTarget = robot.frontLeftDrive.getCurrentPosition() + targetPositionForward - targetPositionRight;
         int rearRightTarget = robot.rearRightDrive.getCurrentPosition() + targetPositionForward - targetPositionRight;
-        int rearLeftTarget = robot.rearLeftDrive.getCurrentPosition() + targetPositionForward - targetPositionRight;
+        int rearLeftTarget = robot.rearLeftDrive.getCurrentPosition() + targetPositionForward + targetPositionRight;
 
         robot.frontRightDrive.setTargetPosition(frontRightTarget);
         robot.frontLeftDrive.setTargetPosition(frontLeftTarget);
         robot.rearRightDrive.setTargetPosition(rearRightTarget);
         robot.rearLeftDrive.setTargetPosition(rearLeftTarget);
 
-        robot.frontRightDrive.setPower(DRIVE_DISTANCE_POWER);
-        robot.frontLeftDrive.setPower(DRIVE_DISTANCE_POWER);
-        robot.rearRightDrive.setPower(DRIVE_DISTANCE_POWER);
-        robot.rearLeftDrive.setPower(DRIVE_DISTANCE_POWER);
+        // holonomic formulas
+//        float FrontRight = gamepad1LeftY + gamepad1LeftX - gamepad1RightX;
+//        float FrontLeft = gamepad1LeftY - gamepad1LeftX + gamepad1RightX;
+//        float BackRight = gamepad1LeftY - gamepad1LeftX - gamepad1RightX;
+//        float BackLeft = gamepad1LeftY + gamepad1LeftX + gamepad1RightX;
+
+        telemetry.addData("a: ", angleY + angleX); // 1.2
+        telemetry.addData("b: ", angleY - angleX); // .7
+        telemetry.addData("c: ", angleY - angleX); // .7
+        telemetry.addData("d: ", angleY + angleX); // 1.2
+
+        double frontRightPower = DRIVE_DISTANCE_POWER * (angleY - angleX);
+        double frontLeftPower = DRIVE_DISTANCE_POWER * (angleY + angleX);
+        double rearRightPower = DRIVE_DISTANCE_POWER * (angleY + angleX);
+        double rearLeftPower = DRIVE_DISTANCE_POWER * (angleY - angleX);
+
+        // If an extremely small power is set, the motor might indicate "busy" for a very long time.
+        if (Math.abs(frontRightPower) > .01) robot.frontRightDrive.setPower(frontRightPower);
+        if (Math.abs(frontLeftPower) > .01) robot.frontLeftDrive.setPower(frontLeftPower);
+        if (Math.abs(rearRightPower) > .01) robot.rearRightDrive.setPower(rearRightPower);
+        if (Math.abs(rearLeftPower) > .01) robot.rearLeftDrive.setPower(rearLeftPower);
 
         while (opModeIsActive() && (robot.frontRightDrive.isBusy() || robot.frontLeftDrive.isBusy() || robot.rearRightDrive.isBusy() || robot.rearLeftDrive.isBusy() )) {
             // Update telemetry & Allow time for other processes to run
+            telemetry.addData("frontRightDrive busy:" , robot.frontRightDrive.isBusy());
+            telemetry.addData("frontLeftDrive busy:" , robot.frontLeftDrive.isBusy());
+            telemetry.addData("rearRightDrive busy:" , robot.rearRightDrive.isBusy());
+            telemetry.addData("rearLeftDrive busy:" , robot.rearLeftDrive.isBusy());
+
             telemetry.update();
             idle();
         }
@@ -297,54 +321,5 @@ public class UltimateAuton extends LinearOpMode {
         robot.rearLeftDrive.setDirection(DcMotorSimple.Direction.REVERSE);
     }
 
-    interface Action {
-        void execute(UltimateAuton ua, double... parameters);
-    }
-
-    class Instruction {
-        public InstructionType instructionType;
-        public double parameters[];
-
-        Instruction(InstructionType it, double... parameters) {
-            this.instructionType = it;
-            this.parameters = parameters;
-        }
-
-        public void execute(UltimateAuton ua) {
-            this.instructionType.action.execute(ua, this.parameters);
-        }
-    }
-
-    enum InstructionType {
-        DRIVE_FOR_TIME(new Action() {
-            @Override
-            public void execute(UltimateAuton ua, double... parameters) {
-                ua.driveForTime(parameters[0], parameters[1], parameters[2]);
-            }
-        }),
-        DRIVE_DISTANCE(new Action() {
-            @Override
-            public void execute(UltimateAuton ua, double... parameters) {
-                ua.driveDistance(parameters[0], parameters[1]);
-            }
-        }),
-        TURN(new Action() {
-            @Override
-            public void execute(UltimateAuton ua, double... parameters) {
-                ua.turn(parameters[0]);
-            }
-        }),
-        TURN_TO(new Action() {
-            @Override
-            public void execute(UltimateAuton ua, double... parameters) {
-                ua.turnTo(parameters[0]);
-            }
-        });
-
-        public Action action;
-        InstructionType(Action action) {
-            this.action = action;
-        }
-    }
 
 }
