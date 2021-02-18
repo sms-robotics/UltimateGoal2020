@@ -99,20 +99,11 @@ public class UltimateAuton extends LinearOpMode {
 
     public void driveDistance(double distanceMm, double angle)
     {
-        telemetry.addData("Drive for distance: ", distanceMm);
-        telemetry.update();
-
         setStraightDrivingModes();
 
-        // TODO: Use real angle - Starting out with angle == 0
-
-        double radAnge = angle * Math.PI / 180.0;
-
-        double angleX = Math.sin(radAnge);
-        double angleY = Math.cos(radAnge);
-
-        telemetry.addData("angleX: ", angleX);
-        telemetry.addData("angleY: ", angleY);
+        double radAngle = Math.toRadians(angle);
+        double angleX = Math.sin(radAngle);
+        double angleY = Math.cos(radAngle);
 
         int targetPositionForward = (int)(distanceMm * TICKS_PER_MILLIMETER * angleY);
         int targetPositionRight = -(int)(distanceMm * TICKS_PER_MILLIMETER * angleX);
@@ -132,17 +123,17 @@ public class UltimateAuton extends LinearOpMode {
 //        float BackRight = gamepad1LeftY - gamepad1LeftX - gamepad1RightX;
 //        float BackLeft = gamepad1LeftY + gamepad1LeftX + gamepad1RightX;
 
-        telemetry.addData("a: ", angleY + angleX); // 1.2
-        telemetry.addData("b: ", angleY - angleX); // .7
-        telemetry.addData("c: ", angleY - angleX); // .7
-        telemetry.addData("d: ", angleY + angleX); // 1.2
+        double frontRightDriveAmount = (angleY - angleX);
+        double frontLeftDriveAmount = (angleY + angleX);
+        double rearRightDriveAmount = (angleY + angleX);
+        double rearLeftDriveAmount = (angleY - angleX);
 
-        double frontRightPower = DRIVE_DISTANCE_POWER * (angleY - angleX);
-        double frontLeftPower = DRIVE_DISTANCE_POWER * (angleY + angleX);
-        double rearRightPower = DRIVE_DISTANCE_POWER * (angleY + angleX);
-        double rearLeftPower = DRIVE_DISTANCE_POWER * (angleY - angleX);
+        double frontRightPower = DRIVE_DISTANCE_POWER * frontRightDriveAmount;
+        double frontLeftPower = DRIVE_DISTANCE_POWER * frontLeftDriveAmount;
+        double rearRightPower = DRIVE_DISTANCE_POWER * rearRightDriveAmount;
+        double rearLeftPower = DRIVE_DISTANCE_POWER * rearLeftDriveAmount;
 
-        // If an extremely small power is set, the motor might indicate "busy" for a very long time.
+        // If an extremely small power is set, the motor might indicate "busy" for a very long time, so don't do that.
         if (Math.abs(frontRightPower) > .01) robot.frontRightDrive.setPower(frontRightPower);
         if (Math.abs(frontLeftPower) > .01) robot.frontLeftDrive.setPower(frontLeftPower);
         if (Math.abs(rearRightPower) > .01) robot.rearRightDrive.setPower(rearRightPower);
@@ -150,11 +141,13 @@ public class UltimateAuton extends LinearOpMode {
 
         while (opModeIsActive() && (robot.frontRightDrive.isBusy() || robot.frontLeftDrive.isBusy() || robot.rearRightDrive.isBusy() || robot.rearLeftDrive.isBusy() )) {
             // Update telemetry & Allow time for other processes to run
-            telemetry.addData("frontRightDrive busy:" , robot.frontRightDrive.isBusy());
-            telemetry.addData("frontLeftDrive busy:" , robot.frontLeftDrive.isBusy());
-            telemetry.addData("rearRightDrive busy:" , robot.rearRightDrive.isBusy());
-            telemetry.addData("rearLeftDrive busy:" , robot.rearLeftDrive.isBusy());
-
+            telemetry.addData("Drive for distance: ", distanceMm);
+            telemetry.addData("angleX: ", angleX);
+            telemetry.addData("angleY: ", angleY);
+            telemetry.addData("frontRightDriveAmount: ", frontRightDriveAmount);
+            telemetry.addData("frontLeftDriveAmount: ", frontLeftDriveAmount);
+            telemetry.addData("rearRightDriveAmount: ", rearRightDriveAmount);
+            telemetry.addData("rearLeftDriveAmount: ", rearLeftDriveAmount);
             telemetry.update();
             idle();
         }
@@ -269,7 +262,6 @@ public class UltimateAuton extends LinearOpMode {
             startTurningRight(turnPower);
         }
         while (opModeIsActive()) {
-            // Update telemetry & Allow time for other processes to run
             error = getError(degrees);
 
             if (Math.abs(error) < 15 && turnPower > TURN_POWER * .2) {
@@ -295,7 +287,6 @@ public class UltimateAuton extends LinearOpMode {
         }
     }
 
-
     public void setRunUsingEncoderMode() {
         robot.frontRightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         robot.frontLeftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -311,15 +302,10 @@ public class UltimateAuton extends LinearOpMode {
     }
 
     public void setStraightDrivingModes() {
-        robot.frontRightDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        robot.frontLeftDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        robot.rearRightDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        robot.rearLeftDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        setRunToPositionMode();
         robot.frontRightDrive.setDirection(DcMotorSimple.Direction.FORWARD);
         robot.frontLeftDrive.setDirection(DcMotorSimple.Direction.REVERSE);
         robot.rearRightDrive.setDirection(DcMotorSimple.Direction.FORWARD);
         robot.rearLeftDrive.setDirection(DcMotorSimple.Direction.REVERSE);
     }
-
-
 }
