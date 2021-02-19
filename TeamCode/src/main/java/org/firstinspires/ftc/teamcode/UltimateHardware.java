@@ -17,6 +17,9 @@ public class UltimateHardware
     public DcMotor rearLeftDrive   = null;
     public DcMotor rearRightDrive  = null;
 
+    public DcMotor shooter  = null;
+    public DcMotor intake  = null;
+
     /* Manipulator */
 
 //    public DcMotor armShoulder = null;
@@ -27,7 +30,7 @@ public class UltimateHardware
 //    public Servo servoFound3 = null;
 //    public Servo servoArm1 = null;
 //    public Servo servoArm3 = null;
-    
+
     /* Auton */
     public Servo sensorAxis = null;
     public NormalizedColorSensor colorSensor = null;
@@ -112,6 +115,23 @@ public class UltimateHardware
         }
         catch (Exception p_exception) { };
 
+        try
+        {
+            shooter = ahwMap.get(DcMotor.class, "shooter");
+            shooter.setDirection(DcMotor.Direction.REVERSE) ;
+            shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            shooter.setTargetPosition(0);
+        }
+        catch (Exception p_exception) { };
+
+        try
+        {
+            intake = ahwMap.get(DcMotor.class, "intake");
+            intake.setDirection(DcMotor.Direction.REVERSE) ;
+            intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            intake.setTargetPosition(0);
+        }
+        catch (Exception p_exception) { };
     }
 }
 
