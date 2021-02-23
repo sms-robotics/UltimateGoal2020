@@ -44,6 +44,18 @@ class Instruction {
             public void execute(UltimateAuton ua, double... parameters) {
                 ua.turnTo(parameters[0]);
             }
+        }),
+        START_DRIVING(new Action() {
+            @Override
+            public void execute(UltimateAuton ua, double... parameters) {
+                ua.startDriving(parameters[0]);
+            }
+        }),
+        STOP_WHEELS(new Action() {
+            @Override
+            public void execute(UltimateAuton ua, double... parameters) {
+                ua.stopWheels();
+            }
         });
 
         public Action action;

@@ -2,9 +2,9 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import com.qualcomm.robotcore.hardware.DcMotor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
@@ -12,11 +12,14 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.firstinspires.ftc.teamcode.Instruction.InstructionType.*;
+import static org.firstinspires.ftc.teamcode.Instruction.InstructionType.DRIVE_DISTANCE;
+import static org.firstinspires.ftc.teamcode.Instruction.InstructionType.START_DRIVING;
+import static org.firstinspires.ftc.teamcode.Instruction.InstructionType.STOP_WHEELS;
 
-@Autonomous(name="Auton", group="Pushbot")
-public class UltimateAuton extends LinearOpMode {
+@Autonomous(name="ThreadedAuton", group="Pushbot")
+public class ThreadedUltimateAuton extends UltimateAuton {
 
     private static final double TURN_TICKS_PER_DEGREE = 14.5;
     private static final double TICKS_PER_MILLIMETER = 8.0;
@@ -29,15 +32,16 @@ public class UltimateAuton extends LinearOpMode {
     ElapsedTime runtime = new ElapsedTime();
 
     List<Instruction> instructions = Arrays.asList(
-            new Instruction(DRIVE_DISTANCE, 100, -135),
-            new Instruction(DRIVE_DISTANCE, 100, 45),
-            new Instruction(DRIVE_DISTANCE, 100, 135),
-            new Instruction(DRIVE_DISTANCE, 100, -45),
-            new Instruction(DRIVE_DISTANCE, 100, 45),
-            new Instruction(DRIVE_DISTANCE, 100, 0),
-            new Instruction(DRIVE_DISTANCE, 100, 180),
-            new Instruction(DRIVE_DISTANCE, 100, 30),
-            new Instruction(DRIVE_DISTANCE, 100, -30)
+            new Instruction(START_DRIVING,  -135),
+            new Instruction(START_DRIVING, 45),
+            new Instruction(START_DRIVING, 135),
+            new Instruction(START_DRIVING, -45),
+            new Instruction(START_DRIVING, 45),
+            new Instruction(START_DRIVING, 0),
+            new Instruction(START_DRIVING, 180),
+            new Instruction(START_DRIVING, 30),
+            new Instruction(START_DRIVING, -30),
+            new Instruction(STOP_WHEELS)
     );
 
     @Override
@@ -54,6 +58,9 @@ public class UltimateAuton extends LinearOpMode {
         float powerReducer = 0.5f;
         // Wait for the game to start (driver presses PLAY)
 
+        MovementThread movementThread = new MovementThread(this);
+        Thread t = new Thread(movementThread);
+        t.start();
 
         int instructionIndex = 0;
 
@@ -63,15 +70,23 @@ public class UltimateAuton extends LinearOpMode {
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
-            double error = getError(0);
-            telemetry.addData("direction from 0: ", error);
-
             if (instructionIndex >= instructions.size()) {
                 telemetry.addData("No more instructions", "");
             } else {
                 Instruction currentInstruction = instructions.get(instructionIndex);
-                telemetry.addData("Current Instruction: ", currentInstruction.instructionType.name());
-                currentInstruction.execute(this);
+                telemetry.addData("adding inst", "");
+                telemetry.update();
+                movementThread.addInstruction(currentInstruction);
+                telemetry.addData("after adding inst", "");
+                telemetry.update();
+                try {
+                    Thread.sleep(500, 0);
+                } catch (InterruptedException e) {
+
+                    telemetry.addData("Sleep interrupted!", "");
+                    telemetry.update();
+                    e.printStackTrace();
+                }
                 instructionIndex++;
             }
             telemetry.update();
