@@ -8,11 +8,13 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MovementThread implements Runnable {
-    volatile LinkedBlockingDeque<Instruction> instructions = new LinkedBlockingDeque<>();
-    UltimateAuton opMode;
+    private final MovementBehaviors movementBehaviors;
+    LinkedBlockingDeque<Instruction> instructions = new LinkedBlockingDeque<>();
+    LinearOpMode opMode;
 
-    public MovementThread(UltimateAuton opMode) {
+    public MovementThread(LinearOpMode opMode, MovementBehaviors movementBehaviors) {
         this.opMode = opMode;
+        this.movementBehaviors = movementBehaviors;
     }
 
     @Override
@@ -31,17 +33,10 @@ public class MovementThread implements Runnable {
             //opMode.telemetry.update();
             try {
                 Instruction currentInstruction = instructions.takeFirst();
-                opMode.telemetry.addData("3", "");
-                opMode.telemetry.update();
-                double error = opMode.getError(0);
-                opMode.telemetry.addData("4", "");
-                opMode.telemetry.update();
+                double error = movementBehaviors.getError(0);
                 opMode.telemetry.addData("direction from 0: ", error);
                 opMode.telemetry.addData("Current Instruction: ", currentInstruction.instructionType.name());
-
-                opMode.telemetry.addData("5", "");
-                opMode.telemetry.update();
-                currentInstruction.execute(opMode);
+                currentInstruction.execute(movementBehaviors);
 
                 opMode.telemetry.addData("6", "");
                 opMode.telemetry.update();

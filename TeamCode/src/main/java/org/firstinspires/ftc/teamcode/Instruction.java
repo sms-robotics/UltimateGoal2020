@@ -9,52 +9,52 @@ class Instruction {
         this.parameters = parameters;
     }
 
-    public void execute(UltimateAuton ua) {
-        this.instructionType.action.execute(ua, this.parameters);
+    public void execute(MovementBehaviors behaviors) {
+        this.instructionType.action.execute(behaviors, this.parameters);
     }
 
     interface Action {
-        void execute(UltimateAuton ua, double... parameters);
+        void execute(MovementBehaviors behaviors, double... parameters);
     }
 
     public enum InstructionType {
         DRIVE_FOR_TIME(new Action() {
             @Override
-            public void execute(UltimateAuton ua, double... parameters) {
-                ua.driveForTime(parameters[0], parameters[1], parameters[2]);
+            public void execute(MovementBehaviors behaviors, double... parameters) {
+                behaviors.driveForTime(parameters[0], parameters[1], parameters[2]);
             }
         }),
 
         DRIVE_DISTANCE(new Action() {
             @Override
-            public void execute(UltimateAuton ua, double... parameters) {
-                ua.driveDistance(parameters[0], parameters[1]);
+            public void execute(MovementBehaviors behaviors, double... parameters) {
+                behaviors.driveDistance(parameters[0], parameters[1]);
             }
         }),
 
         TURN(new Action() {
             @Override
-            public void execute(UltimateAuton ua, double... parameters) {
-                ua.turn(parameters[0]);
+            public void execute(MovementBehaviors behaviors, double... parameters) {
+                behaviors.turn(parameters[0]);
             }
         }),
 
         TURN_TO(new Action() {
             @Override
-            public void execute(UltimateAuton ua, double... parameters) {
-                ua.turnTo(parameters[0]);
+            public void execute(MovementBehaviors behaviors, double... parameters) {
+                behaviors.turnTo(parameters[0]);
             }
         }),
         START_DRIVING(new Action() {
             @Override
-            public void execute(UltimateAuton ua, double... parameters) {
-                ua.startDriving(parameters[0]);
+            public void execute(MovementBehaviors behaviors, double... parameters) {
+                behaviors.startDriving(parameters[0]);
             }
         }),
         STOP_WHEELS(new Action() {
             @Override
-            public void execute(UltimateAuton ua, double... parameters) {
-                ua.stopWheels();
+            public void execute(MovementBehaviors behaviors, double... parameters) {
+                behaviors.stopWheels();
             }
         });
 
