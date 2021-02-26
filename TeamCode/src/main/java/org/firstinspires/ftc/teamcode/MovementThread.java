@@ -32,7 +32,7 @@ public class MovementThread implements Runnable {
 //            opMode.telemetry.addData("2", "");
             //opMode.telemetry.update();
             try {
-                Instruction currentInstruction = instructions.takeFirst();
+                Instruction currentInstruction = instructions.takeFirst(); // Blocks until there is an instruction to take
                 double error = movementBehaviors.getError(0);
                 opMode.telemetry.addData("direction from 0: ", error);
                 opMode.telemetry.addData("Current Instruction: ", currentInstruction.instructionType.name());
