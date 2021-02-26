@@ -24,6 +24,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.Range;
 
 /**
  * This file contains an minimal example of a Linear "OpMode". An OpMode is a 'program' that runs in either
@@ -41,20 +42,86 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class TeleOpTest extends LinearOpMode {
 
+    UltimateHardware robot = new UltimateHardware();
+
+    float driveNominalPower = 0.3f;
+
+    boolean previousDPD = false;
+    boolean previousDPU = false;
 
     @Override
     public void runOpMode() {
+        robot.init(hardwareMap, true);
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
+
+        float powerReducer = 0.5f;
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
-            telemetry.addData("Status", "Running");
-            telemetry.update();
+            float gamepad1LeftY = -gamepad1.left_stick_y;
+            float gamepad1LeftX = -gamepad1.left_stick_x;
+            float gamepad1RightX = gamepad1.right_stick_x;
 
+            // holonomic formulas
+            float frontRight = gamepad1LeftY + gamepad1LeftX - gamepad1RightX;
+            float frontLeft = gamepad1LeftY - gamepad1LeftX + gamepad1RightX;
+            float backRight = gamepad1LeftY - gamepad1LeftX - gamepad1RightX;
+            float backLeft = gamepad1LeftY + gamepad1LeftX + gamepad1RightX;
+
+            float gamepad2LeftY = gamepad2.left_stick_y;
+            float gamepad2RightY = -gamepad2.right_stick_y;
+            float gamepad2RightTrigger = gamepad2.right_trigger;
+            float gamepad2LeftTrigger = gamepad2.left_trigger;
+
+            // Allow driver to select Tank vs POV by pressing START
+            boolean dpad_check = gamepad2.dpad_up;
+            if(dpad_check && (dpad_check != previousDPU)) {
+                telemetry.addLine("Player 2 D-Pad DOWN pressed");
+            }
+            previousDPU = dpad_check;
+
+            dpad_check = gamepad2.dpad_down;
+            if(dpad_check && (dpad_check != previousDPD)) {
+                telemetry.addLine("Player 2 D-Pad UP pressed");
+            }
+            previousDPD = dpad_check;
+
+            powerReducer = driveNominalPower;
+            if ( gamepad1.right_trigger > 0) {
+                telemetry.addLine("Right trigger pressed");
+                powerReducer = 1.0f;
+            }
+            if ( gamepad1.left_trigger > 0) {
+                telemetry.addLine("Left trigger pressed");
+                powerReducer = 0.1f;
+            }
+
+            // clip the right/left values so that the values never exceed +/- 1
+            frontRight = Range.clip(frontRight, -1, 1) * powerReducer;
+            frontLeft = Range.clip(frontLeft, -1, 1) * powerReducer;
+            backLeft = Range.clip(backLeft, -1, 1) * powerReducer;
+            backRight = Range.clip(backRight, -1, 1) * powerReducer;
+
+
+            // write the values to the motors
+
+            robot.frontRightDrive.setPower(frontRight);
+            robot.frontLeftDrive.setPower(frontLeft);
+            robot.rearLeftDrive.setPower(backLeft);
+            robot.rearRightDrive.setPower(backRight);
+
+            //print out motor values
+            telemetry.addLine()
+                    .addData("front right", frontRight)
+                    .addData("front left", frontLeft)
+                    .addData("back left", backLeft)
+                    .addData("back right", backRight);
+
+            telemetry.update();
         }
     }
 }
