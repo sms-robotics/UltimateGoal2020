@@ -40,7 +40,7 @@ import com.qualcomm.robotcore.util.Range;
  */
 @TeleOp
 
-public class TeleOpTest extends LinearOpMode {
+public class TeleOpControl extends LinearOpMode {
 
     UltimateHardware robot = new UltimateHardware();
 
