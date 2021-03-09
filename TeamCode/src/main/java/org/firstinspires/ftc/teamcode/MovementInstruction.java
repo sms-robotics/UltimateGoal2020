@@ -1,10 +1,10 @@
 package org.firstinspires.ftc.teamcode;
 
-class Instruction {
+public class MovementInstruction {
     public InstructionType instructionType;
     public double parameters[];
 
-    Instruction(InstructionType it, double... parameters) {
+    public MovementInstruction(InstructionType it, double... parameters) {
         this.instructionType = it;
         this.parameters = parameters;
     }

@@ -1,38 +1,34 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import com.qualcomm.robotcore.hardware.DcMotor;
-
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static org.firstinspires.ftc.teamcode.Instruction.InstructionType.*;
+import static org.firstinspires.ftc.teamcode.MovementInstruction.InstructionType.*;
 
 @Autonomous(name="Auton", group="Pushbot")
-public class UltimateAuton extends LinearOpMode {
+@Disabled
+public class ConceptUltimateAuton extends LinearOpMode {
 
     /* Declare OpMode members. */
-    UltimateHardware robot = new UltimateHardware();   // Use a Pushbot's hardware
+    HardwareUltimate robot = new HardwareUltimate();   // Use a Pushbot's hardware
     MovementBehaviors movementBehaviors;
     ElapsedTime runtime = new ElapsedTime();
 
-    List<Instruction> instructions = Arrays.asList(
-            new Instruction(DRIVE_DISTANCE, 100, -135),
-            new Instruction(DRIVE_DISTANCE, 100, 45),
-            new Instruction(DRIVE_DISTANCE, 100, 135),
-            new Instruction(DRIVE_DISTANCE, 100, -45),
-            new Instruction(DRIVE_DISTANCE, 100, 45),
-            new Instruction(DRIVE_DISTANCE, 100, 0),
-            new Instruction(DRIVE_DISTANCE, 100, 180),
-            new Instruction(DRIVE_DISTANCE, 100, 30),
-            new Instruction(DRIVE_DISTANCE, 100, -30)
+    List<MovementInstruction> movementInstructions = Arrays.asList(
+            new MovementInstruction(DRIVE_DISTANCE, 100, -135),
+            new MovementInstruction(DRIVE_DISTANCE, 100, 45),
+            new MovementInstruction(DRIVE_DISTANCE, 100, 135),
+            new MovementInstruction(DRIVE_DISTANCE, 100, -45),
+            new MovementInstruction(DRIVE_DISTANCE, 100, 45),
+            new MovementInstruction(DRIVE_DISTANCE, 100, 0),
+            new MovementInstruction(DRIVE_DISTANCE, 100, 180),
+            new MovementInstruction(DRIVE_DISTANCE, 100, 30),
+            new MovementInstruction(DRIVE_DISTANCE, 100, -30)
     );
 
     @Override
@@ -62,12 +58,12 @@ public class UltimateAuton extends LinearOpMode {
             double error = movementBehaviors.getError(0);
             telemetry.addData("direction from 0: ", error);
 
-            if (instructionIndex >= instructions.size()) {
+            if (instructionIndex >= movementInstructions.size()) {
                 telemetry.addLine("No more instructions");
             } else {
-                Instruction currentInstruction = instructions.get(instructionIndex);
-                telemetry.addData("Current Instruction: ", currentInstruction.instructionType.name());
-                currentInstruction.execute(movementBehaviors);
+                MovementInstruction currentMovementInstruction = movementInstructions.get(instructionIndex);
+                telemetry.addData("Current Instruction: ", currentMovementInstruction.instructionType.name());
+                currentMovementInstruction.execute(movementBehaviors);
                 instructionIndex++;
             }
             telemetry.update();

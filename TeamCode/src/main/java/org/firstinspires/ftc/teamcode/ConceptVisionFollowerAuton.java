@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -11,7 +11,8 @@ import com.qualcomm.robotcore.util.RobotLog;
  * Demonstrates OpMode using the VisionManager
  */
 @TeleOp(name = "Vision Follower", group = "Concept")
-public class VisionFollowerAuton extends LinearOpMode {
+@Disabled
+public class ConceptVisionFollowerAuton extends LinearOpMode {
     private static final String TAG = "Vision Follower";
 
     private static final double TURN_TICKS_PER_DEGREE = 14.5;
@@ -20,7 +21,7 @@ public class VisionFollowerAuton extends LinearOpMode {
     private static final double DRIVE_DISTANCE_POWER = 0.5;
 
     /* Declare OpMode members. */
-    UltimateHardware robot = new UltimateHardware();   // Use a Pushbot's hardware
+    HardwareUltimate robot = new HardwareUltimate();   // Use a Pushbot's hardware
     ElapsedTime runtime = new ElapsedTime();
 
     /**
@@ -28,7 +29,7 @@ public class VisionFollowerAuton extends LinearOpMode {
      */
     private final VisionManager visionManager = new VisionManager();
 
-    private final WebcamScanner webcamScanner = new WebcamScanner();
+    private final VisionWebcamScanner webcamScanner = new VisionWebcamScanner();
     private String state = "Start";
 
     @Override

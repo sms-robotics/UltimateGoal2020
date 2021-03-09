@@ -35,14 +35,14 @@ public class VisionManager {
      */
     private VuforiaLocalizer vuforia;
 
-    private final DebugImageProcessor debugImageProcessor = new DebugImageProcessor();
+    private final VisionDebugImageProcessor debugImageProcessor = new VisionDebugImageProcessor();
     private final VisionObjectDetector objectDetector = new VisionObjectDetector();
     private final VisionNavigator navigator = new VisionNavigator();
-    private final RingCountGuesstimator ringCountGuesstimator = new RingCountGuesstimator();
+    private final VisionRingCountGuesstimator ringCountGuesstimator = new VisionRingCountGuesstimator();
 
     public boolean initialize(HardwareMap hardwareMap) {
         cameraManager = ClassFactory.getInstance().getCameraManager();
-        cameraName = hardwareMap.get(WebcamName.class, BotSettings.sharedInstance().getWebcamName());
+        cameraName = hardwareMap.get(WebcamName.class, UtilBotSettings.sharedInstance().getWebcamName());
 
         debugImageProcessor.initialize();
         ringCountGuesstimator.initialize();
@@ -122,8 +122,8 @@ public class VisionManager {
          */
         VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
 
-        parameters.vuforiaLicenseKey = BotSettings.sharedInstance().getVuforiaKey();
-        parameters.cameraName = hardwareMap.get(WebcamName.class, BotSettings.sharedInstance().getWebcamName());
+        parameters.vuforiaLicenseKey = UtilBotSettings.sharedInstance().getVuforiaKey();
+        parameters.cameraName = hardwareMap.get(WebcamName.class, UtilBotSettings.sharedInstance().getWebcamName());
 
         parameters.webcamCalibrationResources = new int[]{R.xml.teamwebcamcalibrations};
         //  Instantiate the Vuforia engine

@@ -20,10 +20,6 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 /**
@@ -38,11 +34,10 @@ import com.qualcomm.robotcore.util.Range;
  * Remove a @Disabled the on the next line or two (if present) to add this opmode to the Driver Station OpMode list,
  * or add a @Disabled annotation to prevent this OpMode from being added to the Driver Station
  */
-@TeleOp
+@TeleOp(name = "SMS TeleOp", group = "Production")
+public class OpModeOfficialTeleOp extends LinearOpMode {
 
-public class TeleOpControl extends LinearOpMode {
-
-    UltimateHardware robot = new UltimateHardware();
+    HardwareUltimate robot = new HardwareUltimate();
 
     float driveNominalPower = 0.3f;
 
@@ -53,12 +48,29 @@ public class TeleOpControl extends LinearOpMode {
     public void runOpMode() {
         robot.init(hardwareMap, true);
 
+        // Create and initialize all of our different parts
+        ActionConveyor conveyor = robot.createAndInitializeConveyor();
+        ActionShooter shooter = robot.createAndInitializeShooter();
+        ActionTrigger trigger = robot.createAndInitializeTrigger();
+        ActionWobbleArm wobbleArm = robot.createAndInitializeWobbleArm();
+
         telemetry.addData("Status", "Initialized");
         telemetry.update();
 
         float powerReducer = 0.5f;
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
+
+        // Wherever the wobble arm is when you press PLAY is where
+        // it thinks "zero" is
+        wobbleArm.rememberThisAsTheZeroPosition();
+
+        // Reset the trigger position so it's ready to fire
+        trigger.resetPosition();
+
+        // These should both be off to start
+        shooter.turnOff();
+        conveyor.turnOff();
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
@@ -76,19 +88,19 @@ public class TeleOpControl extends LinearOpMode {
             float gamepad2RightY = -gamepad2.right_stick_y;
             float gamepad2RightTrigger = gamepad2.right_trigger;
             float gamepad2LeftTrigger = gamepad2.left_trigger;
-
-            // Allow driver to select Tank vs POV by pressing START
-            boolean dpad_check = gamepad2.dpad_up;
-            if(dpad_check && (dpad_check != previousDPU)) {
-                telemetry.addLine("Player 2 D-Pad DOWN pressed");
-            }
-            previousDPU = dpad_check;
-
-            dpad_check = gamepad2.dpad_down;
-            if(dpad_check && (dpad_check != previousDPD)) {
-                telemetry.addLine("Player 2 D-Pad UP pressed");
-            }
-            previousDPD = dpad_check;
+//
+//            // Allow driver to select Tank vs POV by pressing START
+//            boolean dpad_check = gamepad2.dpad_up;
+//            if(dpad_check && (dpad_check != previousDPU)) {
+//                telemetry.addLine("Player 2 D-Pad DOWN pressed");
+//            }
+//            previousDPU = dpad_check;
+//
+//            dpad_check = gamepad2.dpad_down;
+//            if(dpad_check && (dpad_check != previousDPD)) {
+//                telemetry.addLine("Player 2 D-Pad UP pressed");
+//            }
+//            previousDPD = dpad_check;
 
             powerReducer = driveNominalPower;
             if ( gamepad1.right_trigger > 0) {
@@ -106,13 +118,39 @@ public class TeleOpControl extends LinearOpMode {
             backLeft = Range.clip(backLeft, -1, 1) * powerReducer;
             backRight = Range.clip(backRight, -1, 1) * powerReducer;
 
-
             // write the values to the motors
 
             robot.frontRightDrive.setPower(frontRight);
             robot.frontLeftDrive.setPower(frontLeft);
             robot.rearLeftDrive.setPower(backLeft);
             robot.rearRightDrive.setPower(backRight);
+
+            // The D-Pad will drive the wobble arm up and down
+            if (gamepad1.dpad_up) {
+                wobbleArm.raiseArm();
+            } else if (gamepad1.dpad_down) {
+                wobbleArm.lowerArm();
+            }
+
+            if (gamepad1.y) {
+                conveyor.turnOff();
+            } else if (gamepad1.x) {
+                conveyor.turnOn();
+            }
+
+            if (gamepad1.b) {
+                shooter.turnOff();
+            } else if (gamepad1.a) {
+                shooter.turnOn();
+            }
+
+            if (gamepad1.right_trigger > 0.1) {
+                trigger.fireAndReturn();
+            } else {
+                trigger.resetPosition();
+            }
+
+            trigger.loop();
 
             //print out motor values
             telemetry.addLine()

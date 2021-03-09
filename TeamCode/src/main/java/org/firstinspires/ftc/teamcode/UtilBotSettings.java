@@ -24,7 +24,7 @@ import java.io.IOException;
  * <p>
  * BotSettings.sharedInstance().getVuforiaKey()
  */
-public class BotSettings {
+public class UtilBotSettings {
     private static final String TAG = "BotSettings";
     private final File settingsDirectory = AppUtil.ROBOT_SETTINGS;
     private final String settingsFileName = "bot.json";
@@ -106,15 +106,15 @@ public class BotSettings {
     // Inner workings! You probably don't need to edit any of this.
     //---------------------------------------------------------------------------------------------
     private static class BotSettingsSingletonContainer {
-        static final BotSettings SHARED_INSTANCE = BotSettings.factory();
+        static final UtilBotSettings SHARED_INSTANCE = UtilBotSettings.factory();
     }
 
-    static public BotSettings sharedInstance() {
+    static public UtilBotSettings sharedInstance() {
         return BotSettingsSingletonContainer.SHARED_INSTANCE;
     }
 
-    private static BotSettings factory() {
-        BotSettings botSettings = new BotSettings();
+    private static UtilBotSettings factory() {
+        UtilBotSettings botSettings = new UtilBotSettings();
 
         botSettings.load();
 

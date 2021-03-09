@@ -12,7 +12,7 @@ import java.io.File;
  * Created by SalineRobotics on 11/12/2017.
  */
 
-public class SmsJSON {
+public class UtilSmsJSON {
 
     private JSONObject jsonXSettings;
 

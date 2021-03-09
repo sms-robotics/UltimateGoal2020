@@ -19,7 +19,7 @@ import java.io.IOException;
  * This class is useful when you don't have any other means to
  * trigger the saving of an image.
  */
-public class DebugImageProcessor {
+public class VisionDebugImageProcessor {
     private final static String TAG = "DebugImageProcessor";
     private final File captureDirectory = AppUtil.ROBOT_DATA_DIR;
     private long timeSinceLastFrame;

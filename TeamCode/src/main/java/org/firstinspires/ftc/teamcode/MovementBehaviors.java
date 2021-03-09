@@ -19,11 +19,11 @@ public class MovementBehaviors {
     private static final double TURN_ERROR_THRESHOLD = 0.2;
 
     LinearOpMode opMode;
-    UltimateHardware robot;
+    HardwareUltimate robot;
     Telemetry telemetry;
     ElapsedTime runtime = new ElapsedTime();
 
-    public MovementBehaviors(LinearOpMode opMode, UltimateHardware robot) {
+    public MovementBehaviors(LinearOpMode opMode, HardwareUltimate robot) {
         this.opMode = opMode;
         this.robot = robot;
         this.telemetry = opMode.telemetry;

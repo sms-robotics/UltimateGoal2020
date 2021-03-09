@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
@@ -9,7 +10,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 // This class is NOT an opmode, it is used to define all the specific hardware for a single robot.
 
-public class UltimateHardware
+public class HardwareUltimate
 {
     /* DriveTrain */
     public DcMotor frontLeftDrive  = null;
@@ -17,8 +18,9 @@ public class UltimateHardware
     public DcMotor rearLeftDrive   = null;
     public DcMotor rearRightDrive  = null;
 
-    public DcMotor shooter  = null;
-    public DcMotor intake  = null;
+    private DcMotor shooter  = null;
+    private DcMotor conveyor = null;
+    private DcMotor arm;
 
     /* Manipulator */
 
@@ -39,9 +41,12 @@ public class UltimateHardware
     public BNO055IMU imu = null;
 
     public String teamID = "";
+    private HardwareMap hardwareMap;
+    private Servo trigger;
 
     /* Initialize standard Hardware interfaces */
     public void init(HardwareMap ahwMap, boolean Auton) {
+        this.hardwareMap = ahwMap;
 
         if (Auton == true) {
             // Initialize the bot-specific distance sensor
@@ -117,21 +122,70 @@ public class UltimateHardware
 
         try
         {
-            shooter = ahwMap.get(DcMotor.class, "shooter");
-            shooter.setDirection(DcMotor.Direction.REVERSE) ;
-            shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            shooter.setTargetPosition(0);
+            shooter = ahwMap.get(DcMotor.class, "out");
         }
         catch (Exception p_exception) { };
 
         try
         {
-            intake = ahwMap.get(DcMotor.class, "intake");
-            intake.setDirection(DcMotor.Direction.REVERSE) ;
-            intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            intake.setTargetPosition(0);
+            conveyor = ahwMap.get(DcMotor.class, "in");
         }
         catch (Exception p_exception) { };
+
+        try
+        {
+            arm = ahwMap.get(DcMotor.class, "wobble");
+        }
+        catch (Exception p_exception) { };
+
+        try
+        {
+            trigger = ahwMap.get(Servo.class, "fire");
+        }
+        catch (Exception p_exception) { };
+    }
+
+    public VisionManager createAndInitializeVisionManager() {
+        VisionManager visionManager = new VisionManager();
+
+        visionManager.initialize(hardwareMap);
+
+        return visionManager;
+    }
+
+    public MovementBehaviors createAndInitializeMovementBehaviors(LinearOpMode opMode) {
+        MovementBehaviors movementBehaviors = new MovementBehaviors(opMode, this);
+        return movementBehaviors;
+    }
+
+    public VisionWebcamScanner createAndInitializeWebcamScanner() {
+        VisionWebcamScanner webcamScanner = new VisionWebcamScanner();
+        webcamScanner.initialize(this.hardwareMap);
+        return webcamScanner;
+    }
+
+    public ActionConveyor createAndInitializeConveyor() {
+        ActionConveyor actionConveyor = new ActionConveyor(conveyor);
+        actionConveyor.initialize();
+        return actionConveyor;
+    }
+
+    public ActionShooter createAndInitializeShooter() {
+        ActionShooter actionShooter = new ActionShooter(shooter);
+        actionShooter.initialize();
+        return actionShooter;
+    }
+
+    public ActionWobbleArm createAndInitializeWobbleArm() {
+        ActionWobbleArm actionWobbleArm = new ActionWobbleArm(arm);
+        actionWobbleArm.initialize();
+        return actionWobbleArm;
+    }
+
+    public ActionTrigger createAndInitializeTrigger() {
+        ActionTrigger actionTrigger = new ActionTrigger(trigger);
+        actionTrigger.initialize();
+        return actionTrigger;
     }
 }
 

@@ -26,8 +26,8 @@ import com.qualcomm.robotcore.hardware.Servo;
  * }
  * }
  */
-public class WebcamScanner {
-    static final double STARTING_POSITION = 0.60;
+public class VisionWebcamScanner {
+    static final double STARTING_POSITION = 0.75;
     static final double ENDING_POSITION = 0.9;
     static final double NEUTRAL_POSITION = 0.75;
     static final double SCAN_INCREMENT = 0.01;

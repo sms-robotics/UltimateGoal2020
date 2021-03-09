@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.RobotLog;
@@ -9,7 +10,8 @@ import com.qualcomm.robotcore.util.RobotLog;
  * Demonstrates OpMode using the VisionManager
  */
 @TeleOp(name = "Grand Unified Vision Example", group = "Concept")
-public class GrandUnifiedVisionExample extends LinearOpMode {
+@Disabled
+public class ConceptGrandUnifiedVisionExample extends LinearOpMode {
     private static final String TAG = "Grand Unified Vision Example";
 
     /**
@@ -17,7 +19,7 @@ public class GrandUnifiedVisionExample extends LinearOpMode {
      */
     private final VisionManager visionManager = new VisionManager();
 
-    private final WebcamScanner webcamScanner = new WebcamScanner();
+    private final VisionWebcamScanner webcamScanner = new VisionWebcamScanner();
     private String state = "Start";
 
     @Override

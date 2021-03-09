@@ -14,6 +14,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackableDefaultListener;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
+import org.firstinspires.ftc.teamcode.UtilLowPassFilter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,9 +58,9 @@ public class VisionNavigator {
     private static final float mmBotWidth       = 18 * mmPerInch;            // ... or whatever is right for your robot
     private static final float mmFTCFieldWidth  = (12*8 - 2) * mmPerInch;   // the FTC field is ~11'10" center-to-center of the glass panels
     private static final float mmFTCFieldHeight  = (12*12 - 2) * mmPerInch;   // the FTC field is ~11'10" center-to-center of the glass panels
-    private static final LowPassFilter lpfX = new LowPassFilter(500);
-    private static final LowPassFilter lpfY = new LowPassFilter(500);
-    private static final LowPassFilter lpfZ = new LowPassFilter(500);
+    private static final UtilLowPassFilter lpfX = new UtilLowPassFilter(500);
+    private static final UtilLowPassFilter lpfY = new UtilLowPassFilter(500);
+    private static final UtilLowPassFilter lpfZ = new UtilLowPassFilter(500);
 
     private VuforiaTrackables vuforiaUltimateGoalTrackables;
     private List<VuforiaTrackable> trackables;
