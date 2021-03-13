@@ -18,7 +18,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 */
 package org.firstinspires.ftc.teamcode;
 
+import android.hardware.Sensor;
+
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.Range;
 
@@ -34,7 +40,7 @@ import com.qualcomm.robotcore.util.Range;
  * Remove a @Disabled the on the next line or two (if present) to add this opmode to the Driver Station OpMode list,
  * or add a @Disabled annotation to prevent this OpMode from being added to the Driver Station
  */
-@TeleOp(name = "SMS TeleOp", group = "Production")
+@TeleOp(name = "Official TeleOp", group = "Production")
 public class OpModeOfficialTeleOp extends LinearOpMode {
 
     HardwareUltimate robot = new HardwareUltimate();
@@ -43,9 +49,13 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
 
     boolean previousDPD = false;
     boolean previousDPU = false;
+    boolean previousDPL = false;
+    boolean previousDPR = false;
+    boolean previousA = false;
+    boolean imuSteer = true;
 
     @Override
-    public void runOpMode() {
+    public void runOpMode() throws InterruptedException {
         robot.init(hardwareMap, true);
 
         // Create and initialize all of our different parts
@@ -53,6 +63,7 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
         ActionShooter shooter = robot.createAndInitializeShooter();
         ActionTrigger trigger = robot.createAndInitializeTrigger();
         ActionWobbleArm wobbleArm = robot.createAndInitializeWobbleArm();
+        SensorIMU imu = robot.createAndInitializeIMU(this);
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -75,32 +86,40 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
             float gamepad1LeftY = -gamepad1.left_stick_y;
-            float gamepad1LeftX = -gamepad1.left_stick_x;
+            float gamepad1LeftX = gamepad1.left_stick_x;
             float gamepad1RightX = gamepad1.right_stick_x;
 
-            // holonomic formulas
-            float frontRight = gamepad1LeftY + gamepad1LeftX - gamepad1RightX;
-            float frontLeft = gamepad1LeftY - gamepad1LeftX + gamepad1RightX;
-            float backRight = gamepad1LeftY - gamepad1LeftX - gamepad1RightX;
-            float backLeft = gamepad1LeftY + gamepad1LeftX + gamepad1RightX;
+            // Adjust based on angle of field
+            float angleOfFieldInDegrees = (float) imu.getAngle();
+            float angleOfFieldInRadians = (float) (angleOfFieldInDegrees * Math.PI/180.0);
+            float refAngle = (float) (angleOfFieldInRadians + Math.PI/2);
+            float gamepad1LeftXPrime = (float) (gamepad1LeftX * Math.cos(refAngle) + gamepad1LeftY * Math.sin(refAngle));
+            float gamepad1LeftYPrime = (float) (gamepad1LeftY * Math.cos(refAngle) - gamepad1LeftX * Math.sin(refAngle));
 
-            float gamepad2LeftY = gamepad2.left_stick_y;
-            float gamepad2RightY = -gamepad2.right_stick_y;
-            float gamepad2RightTrigger = gamepad2.right_trigger;
-            float gamepad2LeftTrigger = gamepad2.left_trigger;
-//
-//            // Allow driver to select Tank vs POV by pressing START
-//            boolean dpad_check = gamepad2.dpad_up;
-//            if(dpad_check && (dpad_check != previousDPU)) {
-//                telemetry.addLine("Player 2 D-Pad DOWN pressed");
-//            }
-//            previousDPU = dpad_check;
-//
-//            dpad_check = gamepad2.dpad_down;
-//            if(dpad_check && (dpad_check != previousDPD)) {
-//                telemetry.addLine("Player 2 D-Pad UP pressed");
-//            }
-//            previousDPD = dpad_check;
+            float leftX = gamepad1LeftX;
+            float leftY = gamepad1LeftY;
+
+            boolean gpadACheck = gamepad1.a;
+            if (gpadACheck && (gpadACheck != previousA)) {
+                imuSteer = !imuSteer;
+            }
+            previousA = gpadACheck;
+
+            if (imuSteer) {
+                leftX = gamepad1LeftXPrime;
+                leftY = gamepad1LeftYPrime;
+            }
+
+            // holonomic formulas
+            float frontRight = leftY + leftX - gamepad1RightX;
+            float frontLeft = leftY - leftX + gamepad1RightX;
+            float backRight = leftY - leftX - gamepad1RightX;
+            float backLeft = leftY + leftX + gamepad1RightX;
+
+            // float gamepad2LeftY = gamepad2.left_stick_y;
+            // float gamepad2RightY = -gamepad2.right_stick_y;
+            // float gamepad2RightTrigger = gamepad2.right_trigger;
+            // float gamepad2LeftTrigger = gamepad2.left_trigger;
 
             powerReducer = driveNominalPower;
             if ( gamepad1.right_trigger > 0) {
@@ -125,26 +144,56 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
             robot.rearLeftDrive.setPower(backLeft);
             robot.rearRightDrive.setPower(backRight);
 
-            // The D-Pad will drive the wobble arm up and down
-            if (gamepad1.dpad_up) {
+            // Job #1: conveyor
+            // if (gamepad2.y){
+            //     conveyor.turnOff();
+            // }
+            // else if(gamepad2.x){
+            //     conveyor.turnOn();
+            // }
+
+            // Job #2: ARM
+            if (gamepad2.dpad_up){
                 wobbleArm.raiseArm();
-            } else if (gamepad1.dpad_down) {
+            } else if (gamepad2.dpad_down){
                 wobbleArm.lowerArm();
             }
 
-            if (gamepad1.y) {
-                conveyor.turnOff();
-            } else if (gamepad1.x) {
-                conveyor.turnOn();
-            }
-
-            if (gamepad1.b) {
+            // Job #3: Shooter
+            if (gamepad2.b){
                 shooter.turnOff();
-            } else if (gamepad1.a) {
+            }   else if (gamepad2.a){
                 shooter.turnOn();
             }
 
-            if (gamepad1.right_trigger > 0.1) {
+            if (gamepad2.left_trigger > 0.10) {
+                conveyor.turnOn();
+            } else {
+                conveyor.turnOff();
+            }
+
+            // if (gamepad2.right_trigger > 0.10) {
+            //     shooter.turnOn();
+            // } else {
+            //     shooter.turnOff();
+            // }
+
+            // Job #2: ARM
+            boolean dpad_check;
+            dpad_check = gamepad2.dpad_left;
+            if (dpad_check && (dpad_check != previousDPL)) {
+                shooter.speedDown();
+            }
+            previousDPL = dpad_check;
+
+            dpad_check = gamepad2.dpad_right;
+            if (dpad_check && (dpad_check != previousDPR)) {
+                shooter.speedUp();
+            }
+            previousDPR = dpad_check;
+
+            /// Job #4: Trigger
+            if(gamepad2.right_bumper){
                 trigger.fireAndReturn();
             } else {
                 trigger.resetPosition();
@@ -154,10 +203,14 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
 
             //print out motor values
             telemetry.addLine()
-                    .addData("front right", frontRight)
-                    .addData("front left", frontLeft)
-                    .addData("back left", backLeft)
-                    .addData("back right", backRight);
+                .addData("front right", frontRight)
+                .addData("front left", frontLeft)
+                .addData("back left", backLeft)
+                .addData("back right", backRight);
+
+            telemetry.addData("Shooter Speed", "%.03f", shooter.getSpeed());
+            telemetry.addData("Angle", "%.03f", angleOfFieldInDegrees);
+            telemetry.addData("Mode", imuSteer ? "IMU" : "Normal");
 
             telemetry.update();
         }

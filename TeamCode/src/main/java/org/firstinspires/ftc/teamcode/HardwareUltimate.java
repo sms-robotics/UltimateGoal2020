@@ -1,6 +1,9 @@
 package org.firstinspires.ftc.teamcode;
 
+import android.hardware.Sensor;
+
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
@@ -64,27 +67,15 @@ public class HardwareUltimate
             }
             catch (Exception p_exception) { };
 
-            // Embedded IMU
-            BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
-            parameters.angleUnit = BNO055IMU.AngleUnit.DEGREES;
-            parameters.accelUnit = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
-            parameters.loggingEnabled = true;
-            parameters.loggingTag = "IMU";
-            try {
-                imu = ahwMap.get(BNO055IMU.class, "imu");
-                imu.initialize(parameters);
-            } catch (Exception p_exception) { };
-
             // 2m Color Sensor Servo
             try
             {
                 sensorAxis = ahwMap.get(Servo.class, "2maxis");
             }
             catch (Exception p_exception) { };
-
         }
 
-         // Define and Initialize Motors
+        // Define and Initialize Motors
         try
         {
             frontRightDrive = ahwMap.get(DcMotor.class, "fr");
@@ -143,6 +134,21 @@ public class HardwareUltimate
             trigger = ahwMap.get(Servo.class, "fire");
         }
         catch (Exception p_exception) { };
+
+
+        try
+        {
+            imu = this.hardwareMap.get(BNO055IMU.class, "imu");
+        }
+        catch (Exception p_exception) { };
+
+    }
+
+    public SensorIMU createAndInitializeIMU(LinearOpMode opMode) throws InterruptedException {
+        SensorIMU sensorIMU = new SensorIMU(imu);
+        sensorIMU.initialize(opMode);
+
+        return sensorIMU;
     }
 
     public VisionManager createAndInitializeVisionManager() {
