@@ -3,7 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 
-public class RingCountGuesstimator {
+public class VisionRingCountGuesstimator {
     private static final int COLOR_THRESHOLD = 100;
     private static final long NEVER_SAW = -1;
     private long lastSawFrameAtTimestamp = NEVER_SAW;

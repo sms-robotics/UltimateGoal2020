@@ -7,6 +7,7 @@ import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
+import org.firstinspires.ftc.teamcode.UtilBotSettings;
 
 import java.util.HashMap;
 import java.util.List;
@@ -37,14 +38,14 @@ public class VisionObjectDetector {
             "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
 
-        tfodParameters.minResultConfidence = (float) BotSettings.sharedInstance().getVisionObjectDetectionMinResultConfidence();
+        tfodParameters.minResultConfidence = (float) UtilBotSettings.sharedInstance().getVisionObjectDetectionMinResultConfidence();
 
         tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
         tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_QUAD, LABEL_SINGLE);
 
         tfod.setZoom(
-            BotSettings.sharedInstance().getTensorFlowCameraMagnification(),
-            BotSettings.sharedInstance().getTensorFlowCameraAspectRatio());
+            UtilBotSettings.sharedInstance().getTensorFlowCameraMagnification(),
+            UtilBotSettings.sharedInstance().getTensorFlowCameraAspectRatio());
     }
 
     public void activate() {

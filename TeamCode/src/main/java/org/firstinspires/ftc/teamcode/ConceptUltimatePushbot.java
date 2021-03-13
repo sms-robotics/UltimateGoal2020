@@ -1,20 +1,16 @@
 package org.firstinspires.ftc.teamcode;
 
-import android.graphics.Color;
-
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.Range;
 
-import org.firstinspires.ftc.teamcode.UltimateHardware;
-
 @TeleOp(name="Ultimate", group="Pushbot")
-public class Ultimate extends LinearOpMode {
+@Disabled
+public class ConceptUltimatePushbot extends LinearOpMode {
 
     /* Declare OpMode members. */
-    UltimateHardware robot = new UltimateHardware();   // Use a Pushbot's hardware
+    HardwareUltimate robot = new HardwareUltimate();   // Use a Pushbot's hardware
     float[] hsvValues = new float[3];
     final float values[] = hsvValues;
     float armNominalPowerUp = 0.6f;
@@ -33,10 +29,10 @@ public class Ultimate extends LinearOpMode {
     boolean previousDPL = false;
     boolean previousDPR = false;
     double foundation = 0.1;
-    
+
     int currentPosition = 4;
     int singleDriver = 0;
-    
+
     @Override
     public void runOpMode() {
 
@@ -52,7 +48,7 @@ public class Ultimate extends LinearOpMode {
         posArray[7] = 0.0; // deliver stone level 6
         posArray[8]=  0.4; // need 10644 arm servo
         posArray[9]=  0.05;
-        
+
         //posArray[10]=60;
         /* Initialize the hardware variables.
          * The init() method of the hardware class does all the work here
@@ -70,7 +66,7 @@ public class Ultimate extends LinearOpMode {
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
-            
+
             if (gamepad1.a && (singleDriver == 0)) {singleDriver = 1;}
             if (gamepad1.b && (singleDriver == 1)) {singleDriver = 2;}
             if (gamepad1.x && (singleDriver ==2)) {singleDriver = 3;}
@@ -120,7 +116,7 @@ public class Ultimate extends LinearOpMode {
 
             //foundation = Range.clip(foundation, 0.0, 1.0);
             //if (robot.servoArm3 != null) {robot.servoArm3.setPosition(foundation);}
-            
+
             //print out motor values
             telemetry.addLine()
                     .addData("front right", FrontRight)

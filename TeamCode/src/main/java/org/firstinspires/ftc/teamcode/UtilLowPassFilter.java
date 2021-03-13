@@ -1,11 +1,11 @@
 package org.firstinspires.ftc.teamcode;
 
-public class LowPassFilter {
+public class UtilLowPassFilter {
     private double lastOutputValue = Double.NaN;
     private long lastInputTimestamp;
     private final double rcInMs;
 
-    public LowPassFilter(double rcInMs) {
+    public UtilLowPassFilter(double rcInMs) {
         this.rcInMs = rcInMs;
     }
 

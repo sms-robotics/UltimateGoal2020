@@ -1,12 +1,19 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.RobotLog;
 
-@Autonomous(name="Auton", group="Pushbot")
-public class UltimateAuton extends LinearOpMode {
+/**
+ * Demonstrates OpMode using the VisionManager
+ */
+@TeleOp(name = "Vision Follower", group = "Concept")
+@Disabled
+public class ConceptVisionFollowerAuton extends LinearOpMode {
+    private static final String TAG = "Vision Follower";
 
     private static final double TURN_TICKS_PER_DEGREE = 14.5;
     private static final double TICKS_PER_MILLIMETER = 8.0;
@@ -14,53 +21,121 @@ public class UltimateAuton extends LinearOpMode {
     private static final double DRIVE_DISTANCE_POWER = 0.5;
 
     /* Declare OpMode members. */
-    UltimateHardware robot = new UltimateHardware();   // Use a Pushbot's hardware
+    HardwareUltimate robot = new HardwareUltimate();   // Use a Pushbot's hardware
     ElapsedTime runtime = new ElapsedTime();
+
+    /**
+     * State regarding our interaction with the camera
+     */
+    private final VisionManager visionManager = new VisionManager();
+
+    private final VisionWebcamScanner webcamScanner = new VisionWebcamScanner();
+    private String state = "Start";
 
     @Override
     public void runOpMode() {
-        /* Initialize the hardware variables.
-         * The init() method of the hardware class does all the work here
-         */
-        robot.init(hardwareMap, false);
-        //move to hardware code and only run in AUTON
+        boolean successfullyInitialized = visionManager.initialize(hardwareMap);
 
-        // Send telemetry message to signify robot waiting;
-        telemetry.addData("Say", "Hello Driver");    //
+        if (!successfullyInitialized) {
+            telemetry.addData("FATAL", "Initialization failure!");
+            telemetry.update();
+            return;
+        }
+
+        webcamScanner.initialize(hardwareMap);
+
+        robot.init(hardwareMap, false);
+
+        /** Wait for the game to begin */
+        telemetry.addData(">", "Press Play to start op mode");
         telemetry.update();
-        float powerReducer = 0.5f;
-        // Wait for the game to start (driver presses PLAY)
+
+        state = "Do Nothing";
 
         waitForStart();
 
-        // run until the end of the match (driver presses STOP)
-        while (opModeIsActive()) {
-//            driveForTime(0.5, 0, 1000);
-//            turn(90);
-//            driveForTime(0.5, 0, 1000);
-//            turn(90);
-//            driveForTime(0.5, 0, 1000);
-//            turn(90);
-//            driveForTime(0.5, 0, 1000);
-//            turn(90);
+        webcamScanner.goToNeutral();
+//        webcamScanner.startScanning();
 
-            driveDistance(100, 0);
-            turn(90);
-            driveDistance(100, 0);
-            turn(90);
-            driveDistance(100, 0);
-            turn(90);
-            driveDistance(100, 0);
-            turn(90);
-            break;
+        visionManager.activate();
+
+        try {
+            while (opModeIsActive()) {
+                if (gamepad1.a) {
+                    webcamScanner.goToStartingPosition();
+                    webcamScanner.startScanning();
+                    state = "Scanning";
+                }
+
+                if (gamepad1.b) {
+                    webcamScanner.goToNeutral();
+                    state = "Do Nothing";
+                }
+
+                //  If we're in the "scanning mode":
+                if (state == "Scanning") {
+                    webcamScanner.loop(50);
+
+                    if (webcamScanner.isDoneScanning()) {
+                        state = "Make Decision";
+                    }
+                }
+
+                if (state == "Make Decision") {
+                    // TBD
+
+                }
+
+                visionManager.loop();
+
+                telemetry.addData("Target Visible  ",
+                    visionManager.isBlueTargetVisible());
+
+                double[] lastComputedLocation = visionManager.getLastComputedLocationFiltered();
+                if (visionManager.isBlueTargetVisible() && lastComputedLocation != null) {
+                    // X is less... point to right
+
+                    double actualX, actualZ, desiredX, desiredZ;
+                    desiredX = 914.4;
+                    desiredZ = 400;
+
+                    actualX = lastComputedLocation[0];
+                    actualZ = lastComputedLocation[2];
+
+                    double driveCommandedX = actualX - desiredX;
+                    double driveCommandedZ = actualZ - desiredZ;
+                    double angle = Math.toDegrees(Math.atan(driveCommandedX / driveCommandedZ));
+
+                    if (Math.abs(driveCommandedZ) > 100) {
+                        driveDistance(driveCommandedZ, 0);
+                    } else {
+                        if (Math.abs(angle) > 30) {
+                            turn(angle * 1);
+                        }
+                    }
+
+                    telemetry.addData("Position X                      ", String.format("%.1f", lastComputedLocation[0]));
+                    telemetry.addData("Position Y                      ", String.format("%.1f", lastComputedLocation[1]));
+                    telemetry.addData("Position Z                      ", String.format("%.1f", lastComputedLocation[2]));
+                    telemetry.addData("Position Angle                  ", String.format("%.1f", angle));
+                } else {
+                    telemetry.addData("Position                        ", "Unknown");
+                }
+
+                telemetry.update();
+            }
+        } catch (Exception e) {
+            RobotLog.ee(TAG, e, "OpMode Loop Error");
+        } finally {
+            visionManager.shutdown();
         }
     }
 
     public void driveDistance(double distanceMm, double angle)
     {
         setRunToPositionMode();
-        telemetry.addData("Drive for distance: ", distanceMm);
-        telemetry.update();
+//        telemetry.addData("Drive for distance: ", distanceMm);
+//        telemetry.update();
 
         // TODO: Use real angle - Starting out with angle == 0
         int targetPositionForward = (int)(distanceMm * TICKS_PER_MILLIMETER);
@@ -82,32 +157,9 @@ public class UltimateAuton extends LinearOpMode {
 
         while (opModeIsActive() && (robot.frontRightDrive.isBusy() || robot.frontLeftDrive.isBusy() || robot.rearRightDrive.isBusy() || robot.rearLeftDrive.isBusy() )) {
             // Update telemetry & Allow time for other processes to run
-            telemetry.update();
+//            telemetry.update();
             idle();
         }
-    }
-
-    public void driveForTime(double forward, double right, double msToRun)
-    {
-        setRunUsingEncoderMode();
-        telemetry.update();
-
-        robot.frontRightDrive.setPower(forward + right);
-        robot.frontLeftDrive.setPower(forward - right);
-        robot.rearRightDrive.setPower(forward - right);
-        robot.rearLeftDrive.setPower(forward + right);
-        double intRunTime = runtime.milliseconds() + msToRun;
-        while (runtime.milliseconds() < intRunTime) {
-            telemetry.addData("drive-l", forward);
-            telemetry.addData("drive-r", right);
-            telemetry.addData("time", runtime.milliseconds());
-            telemetry.update();
-            idle();
-        }
-        robot.frontRightDrive.setPower(0.0);
-        robot.frontLeftDrive.setPower(0.0);
-        robot.rearRightDrive.setPower(0.0);
-        robot.rearLeftDrive.setPower(0.0);
     }
 
     public void turn(double degrees) {
@@ -135,7 +187,7 @@ public class UltimateAuton extends LinearOpMode {
 
         while (opModeIsActive() && (robot.frontRightDrive.isBusy() || robot.frontLeftDrive.isBusy() || robot.rearRightDrive.isBusy() || robot.rearLeftDrive.isBusy() )) {
             // Update telemetry & Allow time for other processes to run
-            telemetry.update();
+//            telemetry.update();
             idle();
         }
     }
@@ -153,5 +205,4 @@ public class UltimateAuton extends LinearOpMode {
         robot.rearRightDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         robot.rearLeftDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
     }
-
 }
