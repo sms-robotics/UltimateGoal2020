@@ -76,10 +76,8 @@ public class SensorIMU {
      */
     public void resetAngle()
     {
-        Orientation lastAngles = this.lastAngles;
-
         try {
-            lastAngles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+            this.lastAngles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
         } catch (Exception e) {
             RobotLog.ee(TAG, e, "Couldn't get Orientation. Using Last.");
         }
