@@ -26,7 +26,9 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.robot.Robot;
 import com.qualcomm.robotcore.util.Range;
+import com.qualcomm.robotcore.util.RobotLog;
 
 /**
  * This file contains an minimal example of a Linear "OpMode". An OpMode is a 'program' that runs in either
@@ -42,7 +44,7 @@ import com.qualcomm.robotcore.util.Range;
  */
 @TeleOp(name = "Official TeleOp", group = "Production")
 public class OpModeOfficialTeleOp extends LinearOpMode {
-
+    public static final String TAG = "OpModeOfficialTeleOp";
     HardwareUltimate robot = new HardwareUltimate();
 
     float driveNominalPower = 0.3f;
@@ -55,7 +57,7 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
     boolean imuSteer = true;
 
     @Override
-    public void runOpMode() throws InterruptedException {
+    public void runOpMode() {
         robot.init(hardwareMap, true);
 
         // Create and initialize all of our different parts
@@ -63,7 +65,15 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
         ActionShooter shooter = robot.createAndInitializeShooter();
         ActionTrigger trigger = robot.createAndInitializeTrigger();
         ActionWobbleArm wobbleArm = robot.createAndInitializeWobbleArm();
-        SensorIMU imu = robot.createAndInitializeIMU(this);
+        SensorIMU imu = null;
+        try {
+            imu = robot.createAndInitializeIMU(this);
+        } catch (InterruptedException e) {
+            RobotLog.ee(TAG, e, "Exception initializing the IMU!");
+            telemetry.addData("Status", "Exception initializing the IMU!");
+            telemetry.update();
+            return;
+        }
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();

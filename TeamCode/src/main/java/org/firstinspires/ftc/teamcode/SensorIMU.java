@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.robotcore.util.RobotLog;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
@@ -10,6 +11,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
 
 public class SensorIMU {
+    private static final String TAG = "SensorIMU";
     private final BNO055IMU imu;
     Orientation lastAngles = new Orientation();
     double globalAngle = 0;
@@ -47,7 +49,13 @@ public class SensorIMU {
         // returned as 0 to +180 or 0 to -180 rolling back to -179 or +179 when rotation passes
         // 180 degrees. We detect this transition and track the total cumulative angle of rotation.
 
-        Orientation angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+        Orientation angles = lastAngles;
+
+        try {
+            angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+        } catch (Exception e) {
+            RobotLog.ee(TAG, e, "Couldn't get Orientation. Using Last.");
+        }
 
         double deltaAngle = angles.firstAngle - lastAngles.firstAngle;
 
@@ -68,8 +76,15 @@ public class SensorIMU {
      */
     public void resetAngle()
     {
-        lastAngles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+        Orientation lastAngles = this.lastAngles;
+
+        try {
+            lastAngles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+        } catch (Exception e) {
+            RobotLog.ee(TAG, e, "Couldn't get Orientation. Using Last.");
+        }
 
         globalAngle = 0;
     }
+
 }
