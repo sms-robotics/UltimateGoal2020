@@ -62,7 +62,7 @@ public class SensorIMU {
             RobotLog.ee(TAG, e, "Couldn't get Orientation. Using Last.");
         }
 
-        double deltaAngle = angles.firstAngle - lastAngles.firstAngle;
+        double deltaAngle = lastAngles.firstAngle - angles.firstAngle;
 
         globalAngle += deltaAngle;
 

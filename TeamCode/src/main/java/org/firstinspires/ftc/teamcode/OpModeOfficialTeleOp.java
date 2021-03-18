@@ -57,7 +57,7 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
         ActionConveyor conveyor = robot.createAndInitializeConveyor();
         ActionShooter shooter = robot.createAndInitializeShooter();
         ActionTrigger trigger = robot.createAndInitializeTrigger();
-        ActionWobbleArm wobbleArm = robot.createAndInitializeWobbleArm();
+        ActionWobbleArm wobbleArm = robot.createAndInitializeWobbleArm(this);
         SensorIMU imu = robot.createAndInitializeIMU(this);
 
         telemetry.addData("Status", "Initialized");

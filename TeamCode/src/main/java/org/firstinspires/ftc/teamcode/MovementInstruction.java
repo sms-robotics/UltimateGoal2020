@@ -70,14 +70,25 @@ public class MovementInstruction {
         DRIVE_DISTANCE(new Action() {
             @Override
             public void execute(MovementBehaviors behaviors, double... parameters) {
-                behaviors.driveDistance(parameters[0], parameters[1]);
-            }
-        }),
+                switch (parameters.length) {
+                    // Only distance
+                    case 1:
+                        behaviors.driveDistance(parameters[0]);
+                        break;
 
-        TURN(new Action() {
-            @Override
-            public void execute(MovementBehaviors behaviors, double... parameters) {
-                behaviors.turn(parameters[0]);
+                    // distance and angle
+                    case 2:
+                        behaviors.driveDistance(parameters[0], parameters[1]);
+                        break;
+
+                    // distance and angle and power
+                    case 3:
+                        behaviors.driveDistance(parameters[0], parameters[1], parameters[2]);
+                        break;
+
+                    default:
+                        break;
+                }
             }
         }),
 
@@ -95,12 +106,13 @@ public class MovementInstruction {
             }
         }),
 
-        START_DRIVING(new Action() {
+        WAIT_FOR_WOBBLE_ARM(new Action() {
             @Override
             public void execute(MovementBehaviors behaviors, double... parameters) {
-                behaviors.startDriving(parameters[0]);
+                behaviors.waitForWobbleArm(parameters[0]);
             }
         }),
+
         STOP_WHEELS(new Action() {
             @Override
             public void execute(MovementBehaviors behaviors, double... parameters) {

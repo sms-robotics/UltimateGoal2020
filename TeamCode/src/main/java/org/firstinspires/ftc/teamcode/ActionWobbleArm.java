@@ -1,6 +1,8 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 public class ActionWobbleArm {
@@ -9,12 +11,15 @@ public class ActionWobbleArm {
     static final int MAX_ENCODER_COUNTS = 1500;
 
     private final DcMotor armMotor;
+    private final LinearOpMode opMode;
+
     private int zeroPosition;
     private int maxPosition;
     private int currentCommandedPosition = Integer.MAX_VALUE;
 
-    public ActionWobbleArm(DcMotor armMotor) {
+    public ActionWobbleArm(DcMotor armMotor, LinearOpMode opMode) {
         this.armMotor = armMotor;
+        this.opMode = opMode;
     }
 
     public void initialize() {
@@ -81,5 +86,14 @@ public class ActionWobbleArm {
 
         armMotor.setTargetPosition(currentCommandedPosition);
         armMotor.setPower(clippedPower);
+    }
+
+    public void waitForWobbleArm(int timeoutInMs) {
+        int clippedTimeoutInMs = Math.max(timeoutInMs, 0);
+
+        ElapsedTime elapsedTime = new ElapsedTime();
+        while (!opMode.isStopRequested() && elapsedTime.milliseconds() < clippedTimeoutInMs) {
+            opMode.idle();
+        }
     }
 }

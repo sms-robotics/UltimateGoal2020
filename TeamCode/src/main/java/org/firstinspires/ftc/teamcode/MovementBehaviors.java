@@ -11,13 +11,17 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 public class MovementBehaviors {
 
     private static final double TURN_TICKS_PER_DEGREE = 14.5;
-    private static final double TICKS_PER_MILLIMETER = 8.0;
+    private static final double TICKS_PER_MILLIMETER = 4.0;
     private static final double TURN_POWER = 0.25;
-    private static final double DRIVE_DISTANCE_POWER = 0.5;
     private static final double TURN_ERROR_THRESHOLD_IN_DEGREES = 2;
-    private static final double MIN_TURN_POWER = 0.02;
+    private static final double MIN_MOTOR_POWER = 0.0;
+    private static final double MAX_MOTOR_POWER = 1.0;
+    private static final double MIN_DRIVE_POWER = 0.01;
+    private static final double MAX_DRIVE_POWER = 0.5;
+    private static final double MIN_TURN_POWER = MIN_MOTOR_POWER;
     private static final double MAX_TURN_POWER = 0.5;
-    public static final double MIN_MOTOR_SPEED = .01;
+    private static final double DEFAULT_MOTOR_DRIVE_POWER = 0.5;
+    private static final double DEFAULT_DRIVE_ANGLE = 0;
 
     private final ActionConveyor conveyor;
     private final ActionShooter shooter;
@@ -59,26 +63,26 @@ public class MovementBehaviors {
         double robotError;
         double currentAngle = sensorImu.getAngle();
 
-        // calculate error in -179 to +180 range  (
         robotError = targetAngle - currentAngle;
-//        while (robotError > 180) robotError -= 360;
-//        while (robotError <= -180) robotError += 360;
+
         return robotError;
     }
 
-    public void driveDistance(double distanceMm, double angle)
+    public void driveDistance(double distanceMm)  {
+        driveDistance(distanceMm, DEFAULT_DRIVE_ANGLE);
+    }
+
+    public void driveDistance(double distanceMm, double angle)  {
+        driveDistance(distanceMm, angle, DEFAULT_MOTOR_DRIVE_POWER);
+    }
+
+    public void driveDistance(double distanceMm, double angle, double power)
     {
+        double clippedPower = Range.clip(power, MIN_DRIVE_POWER, MAX_DRIVE_POWER);
         setStraightDrivingModes();
 
         double targetRadAngle = Math.toRadians(angle);
-        double actualRadAngle = Math.toRadians(sensorImu.getAngle());
-
-        double errorRadAngle = targetRadAngle - actualRadAngle;
-        double p = 1.0 * errorRadAngle;
-        double i = 0.0 * errorRadAngle;
-        double d = 0.0 * errorRadAngle;
-
-        double radAngle = p + i + d;
+        double radAngle = targetRadAngle;
 
         double angleX = Math.sin(radAngle);
         double angleY = Math.cos(radAngle);
@@ -100,27 +104,24 @@ public class MovementBehaviors {
         double rearRightDriveAmount = (angleY + angleX);
         double rearLeftDriveAmount = (angleY - angleX);
 
-        double frontRightPower = DRIVE_DISTANCE_POWER * frontRightDriveAmount;
-        double frontLeftPower = DRIVE_DISTANCE_POWER * frontLeftDriveAmount;
-        double rearRightPower = DRIVE_DISTANCE_POWER * rearRightDriveAmount;
-        double rearLeftPower = DRIVE_DISTANCE_POWER * rearLeftDriveAmount;
+        double frontRightPower = clippedPower * frontRightDriveAmount;
+        double frontLeftPower = clippedPower * frontLeftDriveAmount;
+        double rearRightPower = clippedPower * rearRightDriveAmount;
+        double rearLeftPower = clippedPower * rearLeftDriveAmount;
 
         // If an extremely small power is set, the motor might indicate "busy" for a very long time, so don't do that.
-        if (Math.abs(frontRightPower) > MIN_MOTOR_SPEED) robot.frontRightDrive.setPower(frontRightPower);
-        if (Math.abs(frontLeftPower) > MIN_MOTOR_SPEED) robot.frontLeftDrive.setPower(frontLeftPower);
-        if (Math.abs(rearRightPower) > MIN_MOTOR_SPEED) robot.rearRightDrive.setPower(rearRightPower);
-        if (Math.abs(rearLeftPower) > MIN_MOTOR_SPEED) robot.rearLeftDrive.setPower(rearLeftPower);
+        if (Math.abs(frontRightPower) > MIN_DRIVE_POWER) robot.frontRightDrive.setPower(frontRightPower);
+        if (Math.abs(frontLeftPower) > MIN_DRIVE_POWER) robot.frontLeftDrive.setPower(frontLeftPower);
+        if (Math.abs(rearRightPower) > MIN_DRIVE_POWER) robot.rearRightDrive.setPower(rearRightPower);
+        if (Math.abs(rearLeftPower) > MIN_DRIVE_POWER) robot.rearLeftDrive.setPower(rearLeftPower);
 
         while (opMode.opModeIsActive() && (robot.frontRightDrive.isBusy() || robot.frontLeftDrive.isBusy() || robot.rearRightDrive.isBusy() || robot.rearLeftDrive.isBusy() )) {
             // Update telemetry & Allow time for other processes to run
-            telemetry.addData("Drive for distance: ", distanceMm);
-            telemetry.addData("angleX: ", angleX);
-            telemetry.addData("angleY: ", angleY);
-            telemetry.addData("frontRightDriveAmount: ", frontRightDriveAmount);
-            telemetry.addData("frontLeftDriveAmount: ", frontLeftDriveAmount);
-            telemetry.addData("rearRightDriveAmount: ", rearRightDriveAmount);
-            telemetry.addData("rearLeftDriveAmount: ", rearLeftDriveAmount);
-            telemetry.update();
+            // telemetry.addData("Drive for distance: ", distanceMm);
+            // telemetry.addData("target: ", Math.toDegrees(targetRadAngle));
+            // telemetry.addData("angleX: ", Math.toDegrees(angleX));
+            // telemetry.addData("angleY: ", Math.toDegrees(angleY));
+            // telemetry.update();
             opMode.idle();
         }
     }
@@ -211,60 +212,6 @@ public class MovementBehaviors {
         robot.rearLeftDrive.setPower(power);
     }
 
-    public void startDriving(double angle) {
-
-        double distanceMm = 10000;
-        setStraightDrivingModes();
-
-        double radAngle = Math.toRadians(angle);
-        double angleX = Math.sin(radAngle);
-        double angleY = Math.cos(radAngle);
-
-        int targetPositionForward = (int)(distanceMm * TICKS_PER_MILLIMETER * angleY);
-        int targetPositionRight = -(int)(distanceMm * TICKS_PER_MILLIMETER * angleX);
-        int frontRightTarget = robot.frontRightDrive.getCurrentPosition() + targetPositionForward + targetPositionRight;
-        int frontLeftTarget = robot.frontLeftDrive.getCurrentPosition() + targetPositionForward - targetPositionRight;
-        int rearRightTarget = robot.rearRightDrive.getCurrentPosition() + targetPositionForward - targetPositionRight;
-        int rearLeftTarget = robot.rearLeftDrive.getCurrentPosition() + targetPositionForward + targetPositionRight;
-
-        robot.frontRightDrive.setTargetPosition(frontRightTarget);
-        robot.frontLeftDrive.setTargetPosition(frontLeftTarget);
-        robot.rearRightDrive.setTargetPosition(rearRightTarget);
-        robot.rearLeftDrive.setTargetPosition(rearLeftTarget);
-
-        // holonomic formulas
-//        float FrontRight = gamepad1LeftY + gamepad1LeftX - gamepad1RightX;
-//        float FrontLeft = gamepad1LeftY - gamepad1LeftX + gamepad1RightX;
-//        float BackRight = gamepad1LeftY - gamepad1LeftX - gamepad1RightX;
-//        float BackLeft = gamepad1LeftY + gamepad1LeftX + gamepad1RightX;
-
-        double frontRightDriveAmount = (angleY - angleX);
-        double frontLeftDriveAmount = (angleY + angleX);
-        double rearRightDriveAmount = (angleY + angleX);
-        double rearLeftDriveAmount = (angleY - angleX);
-
-        double frontRightPower = DRIVE_DISTANCE_POWER * frontRightDriveAmount;
-        double frontLeftPower = DRIVE_DISTANCE_POWER * frontLeftDriveAmount;
-        double rearRightPower = DRIVE_DISTANCE_POWER * rearRightDriveAmount;
-        double rearLeftPower = DRIVE_DISTANCE_POWER * rearLeftDriveAmount;
-
-        // If an extremely small power is set, the motor might indicate "busy" for a very long time, so don't do that.
-        if (Math.abs(frontRightPower) > .01) robot.frontRightDrive.setPower(frontRightPower);
-        if (Math.abs(frontLeftPower) > .01) robot.frontLeftDrive.setPower(frontLeftPower);
-        if (Math.abs(rearRightPower) > .01) robot.rearRightDrive.setPower(rearRightPower);
-        if (Math.abs(rearLeftPower) > .01) robot.rearLeftDrive.setPower(rearLeftPower);
-
-        // Update telemetry & Allow time for other processes to run
-        telemetry.addData("Start driving at angle: ", angle);
-        telemetry.addData("angleX: ", angleX);
-        telemetry.addData("angleY: ", angleY);
-        telemetry.addData("frontRightDriveAmount: ", frontRightDriveAmount);
-        telemetry.addData("frontLeftDriveAmount: ", frontLeftDriveAmount);
-        telemetry.addData("rearRightDriveAmount: ", rearRightDriveAmount);
-        telemetry.addData("rearLeftDriveAmount: ", rearLeftDriveAmount);
-        opMode.idle();
-    }
-
     public void stopWheels() {
         robot.frontRightDrive.setPower(0);
         robot.frontLeftDrive.setPower(0);
@@ -282,36 +229,23 @@ public class MovementBehaviors {
         double error = getError(degrees);
 
         double turnPower = TURN_POWER;
-//
-//        if (error < 0) {
-//            startTurningLeft(turnPower);
-//        } else {
-//            startTurningRight(turnPower);
-//        }
 
         while (opMode.opModeIsActive()) {
-            stopWheels();
-
             error = getError(degrees);
 
-            double targetTurnPower = Math.abs(error) / 45.0;
+            double targetTurnPower = Math.abs(error) / 22.0;
             double normalizedTurnPower = Range.clip(targetTurnPower, MIN_TURN_POWER, MAX_TURN_POWER);
 
-            robot.frontRightDrive.setPower(normalizedTurnPower);
-            robot.frontLeftDrive.setPower(normalizedTurnPower);
-            robot.rearRightDrive.setPower(normalizedTurnPower);
-            robot.rearLeftDrive.setPower(normalizedTurnPower);
-
-            telemetry.addData("Error is: ", error);
-            telemetry.update();
+            // telemetry.addData("Error is: ", error);
+            // telemetry.update();
             if (Math.abs(error) < TURN_ERROR_THRESHOLD_IN_DEGREES) {
                 stopWheels();
                 opMode.idle();
                 break;
             } else if (error < 0) {
-                startTurningLeft(turnPower);
+                startTurningLeft(normalizedTurnPower);
             } else {
-                startTurningRight(turnPower);
+                startTurningRight(normalizedTurnPower);
             }
             opMode.idle();
         }
@@ -379,4 +313,7 @@ public class MovementBehaviors {
         waitForTimeInMilliseconds(millisecondsToWaitForTriggerSweep);
     }
 
+    public void waitForWobbleArm(double timeoutInMs) {
+        wobbleArm.waitForWobbleArm((int)timeoutInMs);
+    }
 }

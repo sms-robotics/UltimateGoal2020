@@ -184,8 +184,8 @@ public class HardwareUltimate
         return actionShooter;
     }
 
-    public ActionWobbleArm createAndInitializeWobbleArm() {
-        ActionWobbleArm actionWobbleArm = new ActionWobbleArm(arm);
+    public ActionWobbleArm createAndInitializeWobbleArm(LinearOpMode opMode) {
+        ActionWobbleArm actionWobbleArm = new ActionWobbleArm(arm, opMode);
         actionWobbleArm.initialize();
         return actionWobbleArm;
     }
