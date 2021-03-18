@@ -18,17 +18,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 */
 package org.firstinspires.ftc.teamcode;
 
-import android.hardware.Sensor;
-
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.robot.Robot;
 import com.qualcomm.robotcore.util.Range;
-import com.qualcomm.robotcore.util.RobotLog;
 
 /**
  * This file contains an minimal example of a Linear "OpMode". An OpMode is a 'program' that runs in either
@@ -44,7 +36,7 @@ import com.qualcomm.robotcore.util.RobotLog;
  */
 @TeleOp(name = "Official TeleOp", group = "Production")
 public class OpModeOfficialTeleOp extends LinearOpMode {
-    public static final String TAG = "OpModeOfficialTeleOp";
+
     HardwareUltimate robot = new HardwareUltimate();
 
     float driveNominalPower = 0.3f;
@@ -54,26 +46,19 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
     boolean previousDPL = false;
     boolean previousDPR = false;
     boolean previousA = false;
+    boolean previousY = false;
     boolean imuSteer = true;
 
     @Override
-    public void runOpMode() {
-        robot.init(hardwareMap, true);
+    public void runOpMode() throws InterruptedException {
+        robot.init(hardwareMap, false);
 
         // Create and initialize all of our different parts
         ActionConveyor conveyor = robot.createAndInitializeConveyor();
         ActionShooter shooter = robot.createAndInitializeShooter();
         ActionTrigger trigger = robot.createAndInitializeTrigger();
         ActionWobbleArm wobbleArm = robot.createAndInitializeWobbleArm();
-        SensorIMU imu = null;
-        try {
-            imu = robot.createAndInitializeIMU(this);
-        } catch (InterruptedException e) {
-            RobotLog.ee(TAG, e, "Exception initializing the IMU!");
-            telemetry.addData("Status", "Exception initializing the IMU!");
-            telemetry.update();
-            return;
-        }
+        SensorIMU imu = robot.createAndInitializeIMU(this);
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -81,6 +66,8 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
         float powerReducer = 0.5f;
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
+
+        imu.resetAngle();
 
         // Wherever the wobble arm is when you press PLAY is where
         // it thinks "zero" is
@@ -95,7 +82,7 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
-            float gamepad1LeftY = -gamepad1.left_stick_y;
+            float gamepad1LeftY = gamepad1.left_stick_y;
             float gamepad1LeftX = gamepad1.left_stick_x;
             float gamepad1RightX = gamepad1.right_stick_x;
 
@@ -115,12 +102,22 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
             }
             previousA = gpadACheck;
 
+            boolean gpadYCheck = gamepad1.y;
+            if (gpadYCheck && (gpadYCheck != previousY)) {
+                imu.resetAngle();
+            }
+            previousY = gpadYCheck;
+
             if (imuSteer) {
                 leftX = gamepad1LeftXPrime;
                 leftY = gamepad1LeftYPrime;
             }
 
             // holonomic formulas
+            // float frontRight = gamepad1LeftY + gamepad1LeftX - gamepad1RightX;
+            // float frontLeft = gamepad1LeftY - gamepad1LeftX + gamepad1RightX;
+            // float backRight = gamepad1LeftY - gamepad1LeftX - gamepad1RightX;
+            // float backLeft = gamepad1LeftY + gamepad1LeftX + gamepad1RightX;
             float frontRight = leftY + leftX - gamepad1RightX;
             float frontLeft = leftY - leftX + gamepad1RightX;
             float backRight = leftY - leftX - gamepad1RightX;
@@ -132,11 +129,11 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
             // float gamepad2LeftTrigger = gamepad2.left_trigger;
 
             powerReducer = driveNominalPower;
-            if ( gamepad1.right_trigger > 0) {
+            if (gamepad1.right_trigger > 0) {
                 telemetry.addLine("Right trigger pressed");
                 powerReducer = 1.0f;
             }
-            if ( gamepad1.left_trigger > 0) {
+            if (gamepad1.left_trigger > 0) {
                 telemetry.addLine("Left trigger pressed");
                 powerReducer = 0.1f;
             }
@@ -204,7 +201,7 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
 
             /// Job #4: Trigger
             if(gamepad2.right_bumper){
-                trigger.fireAndReturn();
+                trigger.fire();
             } else {
                 trigger.resetPosition();
             }

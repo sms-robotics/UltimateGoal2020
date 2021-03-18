@@ -125,7 +125,8 @@ public class VisionManager {
         parameters.vuforiaLicenseKey = UtilBotSettings.sharedInstance().getVuforiaKey();
         parameters.cameraName = hardwareMap.get(WebcamName.class, UtilBotSettings.sharedInstance().getWebcamName());
 
-        parameters.webcamCalibrationResources = new int[]{R.xml.teamwebcamcalibrations};
+//        parameters.webcamCalibrationResources = new int[]{R.xml.teamwebcamcalibrations};
+
         //  Instantiate the Vuforia engine
         vuforia = ClassFactory.getInstance().createVuforia(parameters);
 

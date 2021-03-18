@@ -11,6 +11,8 @@ import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+import org.firstinspires.ftc.robotcore.external.Func;
+
 // This class is NOT an opmode, it is used to define all the specific hardware for a single robot.
 
 public class HardwareUltimate
@@ -144,7 +146,7 @@ public class HardwareUltimate
 
     }
 
-    public SensorIMU createAndInitializeIMU(LinearOpMode opMode) throws InterruptedException {
+    public SensorIMU createAndInitializeIMU(LinearOpMode opMode) {
         SensorIMU sensorIMU = new SensorIMU(imu);
         sensorIMU.initialize(opMode);
 
@@ -159,8 +161,8 @@ public class HardwareUltimate
         return visionManager;
     }
 
-    public MovementBehaviors createAndInitializeMovementBehaviors(LinearOpMode opMode) {
-        MovementBehaviors movementBehaviors = new MovementBehaviors(opMode, this);
+    public MovementBehaviors createAndInitializeMovementBehaviors(LinearOpMode opMode, ActionConveyor conveyor, ActionShooter shooter, ActionTrigger trigger, ActionWobbleArm wobbleArm, SensorIMU sensorIMU) {
+        MovementBehaviors movementBehaviors = new MovementBehaviors(opMode, this, conveyor, shooter, trigger, wobbleArm, sensorIMU);
         return movementBehaviors;
     }
 
