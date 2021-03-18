@@ -20,6 +20,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 /**
@@ -48,6 +49,7 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
     boolean previousA = false;
     boolean previousY = false;
     boolean imuSteer = true;
+    ElapsedTime runtime = new ElapsedTime();
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -66,6 +68,8 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
         float powerReducer = 0.5f;
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
+
+        runtime.reset();
 
         imu.resetAngle();
 
@@ -88,13 +92,13 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
 
             // Adjust based on angle of field
             float angleOfFieldInDegrees = (float) imu.getAngle();
-            float angleOfFieldInRadians = (float) (angleOfFieldInDegrees * Math.PI/180.0);
+            float angleOfFieldInRadians = (float) Math.toRadians(angleOfFieldInDegrees);
             float refAngle = (float) (angleOfFieldInRadians + Math.PI/2);
             float gamepad1LeftXPrime = (float) (gamepad1LeftX * Math.cos(refAngle) + gamepad1LeftY * Math.sin(refAngle));
             float gamepad1LeftYPrime = (float) (gamepad1LeftY * Math.cos(refAngle) - gamepad1LeftX * Math.sin(refAngle));
 
-            float leftX = gamepad1LeftX;
-            float leftY = gamepad1LeftY;
+            float leftX = -gamepad1LeftX;
+            float leftY = -gamepad1LeftY;
 
             boolean gpadACheck = gamepad1.a;
             if (gpadACheck && (gpadACheck != previousA)) {
@@ -114,19 +118,10 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
             }
 
             // holonomic formulas
-            // float frontRight = gamepad1LeftY + gamepad1LeftX - gamepad1RightX;
-            // float frontLeft = gamepad1LeftY - gamepad1LeftX + gamepad1RightX;
-            // float backRight = gamepad1LeftY - gamepad1LeftX - gamepad1RightX;
-            // float backLeft = gamepad1LeftY + gamepad1LeftX + gamepad1RightX;
             float frontRight = leftY + leftX - gamepad1RightX;
             float frontLeft = leftY - leftX + gamepad1RightX;
             float backRight = leftY - leftX - gamepad1RightX;
             float backLeft = leftY + leftX + gamepad1RightX;
-
-            // float gamepad2LeftY = gamepad2.left_stick_y;
-            // float gamepad2RightY = -gamepad2.right_stick_y;
-            // float gamepad2RightTrigger = gamepad2.right_trigger;
-            // float gamepad2LeftTrigger = gamepad2.left_trigger;
 
             powerReducer = driveNominalPower;
             if (gamepad1.right_trigger > 0) {
@@ -145,19 +140,17 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
             backRight = Range.clip(backRight, -1, 1) * powerReducer;
 
             // write the values to the motors
-
             robot.frontRightDrive.setPower(frontRight);
             robot.frontLeftDrive.setPower(frontLeft);
             robot.rearLeftDrive.setPower(backLeft);
             robot.rearRightDrive.setPower(backRight);
 
             // Job #1: conveyor
-            // if (gamepad2.y){
-            //     conveyor.turnOff();
-            // }
-            // else if(gamepad2.x){
-            //     conveyor.turnOn();
-            // }
+            if (gamepad2.left_trigger > 0.10) {
+                conveyor.turnOn();
+            } else {
+                conveyor.turnOff();
+            }
 
             // Job #2: ARM
             if (gamepad2.dpad_up){
@@ -173,19 +166,7 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
                 shooter.turnOn();
             }
 
-            if (gamepad2.left_trigger > 0.10) {
-                conveyor.turnOn();
-            } else {
-                conveyor.turnOff();
-            }
-
-            // if (gamepad2.right_trigger > 0.10) {
-            //     shooter.turnOn();
-            // } else {
-            //     shooter.turnOff();
-            // }
-
-            // Job #2: ARM
+            // Change shooter speed
             boolean dpad_check;
             dpad_check = gamepad2.dpad_left;
             if (dpad_check && (dpad_check != previousDPL)) {

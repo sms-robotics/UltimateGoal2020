@@ -178,7 +178,7 @@ public class OpModeOfficialAuton extends LinearOpMode {
                 return AutonState.PROGRAM_C;
             } else {
                 // No rings is A
-                return AutonState.PROGRAM_C;
+                return AutonState.PROGRAM_A;
             }
         }
 
@@ -188,7 +188,9 @@ public class OpModeOfficialAuton extends LinearOpMode {
     // DRIVE_TO_A:
     private AutonState doDriveToA(long timesRun) {
         if (timesRun == 0) {
+            // Drive for 5 ft forward at heading 0 degrees at 50% speed
             addInstruction(DRIVE_DISTANCE, 5 * MM_PER_FOOT, 0, 0.5);
+            // Turn 45 degrees to the left (hence the negative)
             addInstruction(TURN_TO, -45);
             // Move the wobble arm to zero position at 25% power
             addInstruction(MOVE_WOBBLE_ARM_TO_POSITION, 1.0, 0.25);
@@ -200,17 +202,17 @@ public class OpModeOfficialAuton extends LinearOpMode {
             addInstruction(TURN_ON_SHOOTER, 0.9);
             // Turn on conveyor at 75% power
             addInstruction(TURN_ON_CONVEYOR, 0.75);
-            // Wait three seconds
+            // Wait three seconds (3000 milliseconds)
             addInstruction(WAIT_FOR_TIME, 3000);
             // FIRE and wait 2 seconds for the trigger to sweep
             addInstruction(FIRE_RING, 2000);
             // Wait three seconds
             addInstruction(WAIT_FOR_TIME, 3000);
-            // FIRE and wait 2 seconds for the trigger to sweep
+            // FIRE and wait 2 seconds for the trigger to sweep up and back
             addInstruction(FIRE_RING, 2000);
             // Wait three seconds
             addInstruction(WAIT_FOR_TIME, 3000);
-            // FIRE and wait 2 seconds for the trigger to sweep
+            // FIRE and wait 2 seconds for the trigger to sweep up and back
             addInstruction(FIRE_RING, 2000);
             // Turn these off while we park
             addInstruction(TURN_OFF_SHOOTER);
@@ -218,9 +220,11 @@ public class OpModeOfficialAuton extends LinearOpMode {
             addInstruction(TURN_TO, 0);
             // Drive straight back to parked position
             // NOTE: we'll have to adjust this because we
-            // didn't start on a line, but we'll worry about
+            // didn't start on the line, but we'll worry about
             // that when we can fine-tune
-            addInstruction(DRIVE_DISTANCE, -5 * MM_PER_FOOT, 0);
+            //
+            // Drive back 5 feet at 50% speed at 0 degrees (wrong!.. fixme!)
+            addInstruction(DRIVE_DISTANCE, -5 * MM_PER_FOOT, 0, 0.5);
 
             return null;
         }
@@ -286,7 +290,20 @@ public class OpModeOfficialAuton extends LinearOpMode {
     }
 
     private AutonState doDriveToC(long timesRun) {
-        return AutonState.STOP;
+        if (timesRun == 0) {
+            // TODO: I think we can just figure out what the angle to drive at should be
+            addInstruction(DRIVE_DISTANCE, 2 * MM_PER_FOOT, -15.0, 0.5);
+            addInstruction(DRIVE_DISTANCE, -2 * MM_PER_FOOT, -15.0, 0.5);
+
+            return null;
+        }
+
+        // Now we wait
+        if (movementThread.hasNothingToDo()) {
+            return AutonState.STOP;
+        }
+
+        return null;
     }
 
     private AutonState doStop(long timesRun) {
