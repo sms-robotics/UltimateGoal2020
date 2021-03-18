@@ -4,12 +4,14 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.Range;
 
 public class ActionShooter {
+    public static final double INITIAL_SPEED = 1.0;
+
     private final DcMotor shooterMotor;
     private double speed;
 
     public ActionShooter(DcMotor conveyorMotor) {
         this.shooterMotor = conveyorMotor;
-        speed = 0.5;
+        speed = INITIAL_SPEED;
     }
 
     public void initialize() {
@@ -43,5 +45,11 @@ public class ActionShooter {
 
     public double getSpeed() {
         return this.speed;
+    }
+
+    public void turnOnAtPower(double power) {
+        double clippedPower = Range.clip(power, 0.0, 1.0);
+        speed = clippedPower;
+        shooterMotor.setPower(clippedPower);
     }
 }

@@ -31,6 +31,10 @@ public class ActionTrigger {
         triggerMotor.setPosition(STARTING_POSITION);
     }
 
+    public void fire() {
+        triggerMotor.setPosition(TRIGGER_MAX_POSITION);
+    }
+
     public void fireAndReturn() {
         currentCommand = CMD.FIRE_AND_RETURN;
         triggerMotor.setPosition(TRIGGER_MAX_POSITION);

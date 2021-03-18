@@ -18,6 +18,48 @@ public class MovementInstruction {
     }
 
     public enum InstructionType {
+        FIRE_RING(new Action() {
+            @Override
+            public void execute(MovementBehaviors behaviors, double... parameters) {
+                behaviors.fireTrigger(parameters[0]);
+            }
+        }),
+
+        WAIT_FOR_TIME(new Action() {
+            @Override
+            public void execute(MovementBehaviors behaviors, double... parameters) {
+                behaviors.waitForTimeInMilliseconds(parameters[0]);
+            }
+        }),
+
+        TURN_ON_CONVEYOR(new Action() {
+            @Override
+            public void execute(MovementBehaviors behaviors, double... parameters) {
+                behaviors.turnOnCoveyor(parameters[0]);
+            }
+        }),
+
+        TURN_OFF_CONVEYOR(new Action() {
+            @Override
+            public void execute(MovementBehaviors behaviors, double... parameters) {
+                behaviors.turnOffCoveyor();
+            }
+        }),
+
+        TURN_ON_SHOOTER(new Action() {
+            @Override
+            public void execute(MovementBehaviors behaviors, double... parameters) {
+                behaviors.turnOnShooter(parameters[0]);
+            }
+        }),
+
+        TURN_OFF_SHOOTER(new Action() {
+            @Override
+            public void execute(MovementBehaviors behaviors, double... parameters) {
+                behaviors.turnOffShooter();
+            }
+        }),
+
         DRIVE_FOR_TIME(new Action() {
             @Override
             public void execute(MovementBehaviors behaviors, double... parameters) {
@@ -45,6 +87,14 @@ public class MovementInstruction {
                 behaviors.turnTo(parameters[0]);
             }
         }),
+
+        MOVE_WOBBLE_ARM_TO_POSITION(new Action() {
+            @Override
+            public void execute(MovementBehaviors behaviors, double... parameters) {
+                behaviors.moveWobbleArmToPosition(parameters[0], parameters[1]);
+            }
+        }),
+
         START_DRIVING(new Action() {
             @Override
             public void execute(MovementBehaviors behaviors, double... parameters) {

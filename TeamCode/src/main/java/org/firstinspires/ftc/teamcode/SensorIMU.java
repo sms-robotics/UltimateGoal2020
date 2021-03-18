@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.RobotLog;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -12,6 +13,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
 public class SensorIMU {
     private static final String TAG = "SensorIMU";
+    private static final double MAX_TIME_TO_ALLOW_CALIBRATION_MS = 2000;
     private final BNO055IMU imu;
     Orientation lastAngles = new Orientation();
     double globalAngle = 0;
@@ -22,19 +24,22 @@ public class SensorIMU {
 
     public void initialize(LinearOpMode opMode) {
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
-        parameters.mode = BNO055IMU.SensorMode.IMU;
+        // parameters.mode = BNO055IMU.SensorMode.IMU;
         parameters.angleUnit = BNO055IMU.AngleUnit.DEGREES;
         parameters.accelUnit = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
+        parameters.calibrationDataFile = "BNO055IMUCalibration.json";
         parameters.loggingEnabled = false;
         imu.initialize(parameters);
 
+        ElapsedTime elapsedTime = new ElapsedTime();
+
         if (opMode != null) {
-            // make sure the imu gyro is calibrated before continuing.
-            while (!opMode.isStopRequested() && !imu.isGyroCalibrated())
-            {
-                opMode.sleep(50);
-                opMode.idle();
-            }
+             // make sure the imu gyro is calibrated before continuing.
+             while (!opMode.isStopRequested() && !imu.isGyroCalibrated() && elapsedTime.milliseconds() < MAX_TIME_TO_ALLOW_CALIBRATION_MS)
+             {
+                 opMode.sleep(50);
+                 opMode.idle();
+             }
         }
     }
 
@@ -58,11 +63,6 @@ public class SensorIMU {
         }
 
         double deltaAngle = angles.firstAngle - lastAngles.firstAngle;
-
-        if (deltaAngle < -180)
-            deltaAngle += 360;
-        else if (deltaAngle > 180)
-            deltaAngle -= 360;
 
         globalAngle += deltaAngle;
 

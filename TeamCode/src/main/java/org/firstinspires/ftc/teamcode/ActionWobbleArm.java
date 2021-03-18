@@ -69,4 +69,17 @@ public class ActionWobbleArm {
         armMotor.setTargetPosition(currentCommandedPosition);
         armMotor.setPower(0.25);
     }
+
+    public void moveArmToPosition(double percent, double atPower) {
+        double clippedPower = Range.clip(atPower, 0.0, 1.0);
+        double clippedPercentage = Range.clip(percent, 0.0, 1.0);
+        // Typical formula for figuring out where in an
+        // arbitrary range by percentage [0.0, 1.0]
+        int targetPosition = (int)((double)(maxPosition - zeroPosition) * clippedPercentage) + zeroPosition;
+
+        currentCommandedPosition = targetPosition;
+
+        armMotor.setTargetPosition(currentCommandedPosition);
+        armMotor.setPower(clippedPower);
+    }
 }

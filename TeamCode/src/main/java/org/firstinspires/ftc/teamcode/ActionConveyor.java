@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.util.Range;
 
 public class ActionConveyor {
     private final DcMotor conveyorMotor;
@@ -14,8 +15,13 @@ public class ActionConveyor {
         conveyorMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
+    public void turnOnAtPower(double power) {
+        double clippedPower = Range.clip(power, 0.0, 1.0);
+        conveyorMotor.setPower(clippedPower);
+    }
+
     public void turnOn() {
-        conveyorMotor.setPower(0.5);
+        turnOnAtPower(0.5);
     }
 
     public void turnOff() {

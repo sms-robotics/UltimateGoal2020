@@ -7,9 +7,18 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import java.util.ArrayList;
 
 import static org.firstinspires.ftc.teamcode.MovementInstruction.InstructionType.DRIVE_DISTANCE;
+import static org.firstinspires.ftc.teamcode.MovementInstruction.InstructionType.FIRE_RING;
+import static org.firstinspires.ftc.teamcode.MovementInstruction.InstructionType.MOVE_WOBBLE_ARM_TO_POSITION;
+import static org.firstinspires.ftc.teamcode.MovementInstruction.InstructionType.TURN_OFF_CONVEYOR;
+import static org.firstinspires.ftc.teamcode.MovementInstruction.InstructionType.TURN_OFF_SHOOTER;
+import static org.firstinspires.ftc.teamcode.MovementInstruction.InstructionType.TURN_ON_CONVEYOR;
+import static org.firstinspires.ftc.teamcode.MovementInstruction.InstructionType.TURN_ON_SHOOTER;
+import static org.firstinspires.ftc.teamcode.MovementInstruction.InstructionType.TURN_TO;
+import static org.firstinspires.ftc.teamcode.MovementInstruction.InstructionType.WAIT_FOR_TIME;
 
 @Autonomous(name="SMS Auton", group="Production")
 public class OpModeOfficialAuton extends LinearOpMode {
+    private static final double MM_PER_FOOT = 304.8;
 
     /* Declare OpMode members. */
     HardwareUltimate robot = new HardwareUltimate();   // Use a Pushbot's hardware
@@ -23,17 +32,29 @@ public class OpModeOfficialAuton extends LinearOpMode {
 
     private VisionWebcamScanner webcamScanner;
     private MovementThread movementThread;
+    private ActionWobbleArm wobbleArm;
+    private ActionConveyor conveyor;
+    private ActionShooter shooter;
+    private ActionTrigger trigger;
+    private SensorIMU sensorImu;
 
     // Tracks what state we're in
     private enum AutonState {
+        // START: We are waiting to do something
         START,
+        // We are having the webcam scan the field
         RING_SCAN,
-        PICK_UP_WOBBLE,
-        DRIVE_TO_FIND_IMAGE,
+        // We run the "A" program
         DRIVE_TO_A,
+        // We run the "B" program
         DRIVE_TO_B,
+        // We run the "C" program
         DRIVE_TO_C,
+        // We are done (game controller can restart for debugging)
         STOP,
+        // We drive back to park from the A spot
+        PARK_FROM_A,
+        ;
     };
     private AutonState state = AutonState.START;
 
@@ -45,13 +66,19 @@ public class OpModeOfficialAuton extends LinearOpMode {
          * The init() method of the hardware class does all the work here
          */
         robot.init(hardwareMap, true);
-        movementBehaviors = robot.createAndInitializeMovementBehaviors(this);
         visionManager = robot.createAndInitializeVisionManager();
-
         webcamScanner = robot.createAndInitializeWebcamScanner();
 
+        conveyor = robot.createAndInitializeConveyor();
+        shooter = robot.createAndInitializeShooter();
+        trigger = robot.createAndInitializeTrigger();
+        wobbleArm = robot.createAndInitializeWobbleArm();
+        sensorImu = robot.createAndInitializeIMU(this);
+
+        movementBehaviors = robot.createAndInitializeMovementBehaviors(this, conveyor, shooter, trigger, wobbleArm, sensorImu);
+
         // Send telemetry message to signify robot waiting;
-        telemetry.addData("Say", "Hello Driver");    //
+        telemetry.addData("Say", "I am alive");    //
         telemetry.update();
 
         movementThread = new MovementThread(this, movementBehaviors);
@@ -64,6 +91,7 @@ public class OpModeOfficialAuton extends LinearOpMode {
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
 
+        sensorImu.resetAngle();
         webcamScanner.goToNeutral();
         visionManager.activate();
 
@@ -94,6 +122,8 @@ public class OpModeOfficialAuton extends LinearOpMode {
                 nextState = doRingScan(timesRun);
             } else if (state == AutonState.DRIVE_TO_A) {
                 nextState = doDriveToA(timesRun);
+            } else if (state == AutonState.PARK_FROM_A) {
+                nextState = doParkFromA(timesRun);
             } else if (state == AutonState.DRIVE_TO_B) {
                 nextState = doDriveToB(timesRun);
             } else if (state == AutonState.DRIVE_TO_C) {
@@ -119,6 +149,12 @@ public class OpModeOfficialAuton extends LinearOpMode {
         return AutonState.RING_SCAN;
     }
 
+    // RING_SCAN:
+    //
+    // We start the webcamScanner and let it do its
+    // full sweep. When it says it's done, we decide
+    // how many rings we see and choose our next
+    // state accordingly.
     private AutonState doRingScan(long timesRun) {
         if (timesRun == 0) {
 
@@ -139,20 +175,68 @@ public class OpModeOfficialAuton extends LinearOpMode {
                 return AutonState.DRIVE_TO_A;
             } else if (howManySecondsAgoSawQuadRings != VisionManager.NEVER_SAW
                 && howManySecondsAgoSawQuadRings < 3) {
-                return AutonState.DRIVE_TO_C;
+                return AutonState.DRIVE_TO_A;
             } else {
-                return AutonState.DRIVE_TO_C;
+                return AutonState.DRIVE_TO_A;
             }
         }
 
         return null;
     }
 
+    // DRIVE_TO_A:
+    //
+    //
     private AutonState doDriveToA(long timesRun) {
         if (timesRun == 0) {
-            addDriveInstruction(DRIVE_DISTANCE, 500, 0);
-            addDriveInstruction(DRIVE_DISTANCE, 500, -90);
-            addDriveInstruction(DRIVE_DISTANCE, 500, -180);
+//            addInstruction(DRIVE_DISTANCE, 5 * MM_PER_FOOT, 0);
+            addInstruction(TURN_TO, -45);
+//            // Move the wobble arm to zero position at 25% power
+//            addInstruction(MOVE_WOBBLE_ARM_TO_POSITION, 0.0, 0.25);
+//            // Turn back to fire the rings into the top slot
+//            addInstruction(TURN_TO, 0);
+//            // Turn on shooter at 90% power
+//            addInstruction(TURN_ON_SHOOTER, 0.9);
+//            // Turn on conveyor at 75% power
+//            addInstruction(TURN_ON_CONVEYOR, 0.75);
+//            // Wait three seconds
+//            addInstruction(WAIT_FOR_TIME, 3000);
+//            // FIRE and wait 2 seconds for the trigger to sweep
+//            addInstruction(FIRE_RING, 2000);
+//            // Wait three seconds
+//            addInstruction(WAIT_FOR_TIME, 3000);
+//            // FIRE and wait 2 seconds for the trigger to sweep
+//            addInstruction(FIRE_RING, 2000);
+//            // Wait three seconds
+//            addInstruction(WAIT_FOR_TIME, 3000);
+//            // FIRE and wait 2 seconds for the trigger to sweep
+//            addInstruction(FIRE_RING, 2000);
+//            // Turn these off while we park
+//            addInstruction(TURN_OFF_SHOOTER);
+//            addInstruction(TURN_OFF_CONVEYOR);
+
+            return null;
+        }
+
+        // Now we wait
+        if (movementThread.hasNothingToDo()) {
+            return AutonState.PARK_FROM_A;
+        }
+
+        return null;
+    }
+
+    private AutonState doParkFromA(long timesRun) {
+        if (timesRun == 0) {
+            // Just make sure we're oriented correctly
+            // even though we should already be
+            addInstruction(TURN_TO, 0);
+            // Drive straight back to parked position
+            // NOTE: we'll have to adjust this because we
+            // didn't start on a line, but we'll worry about
+            // that when we can fine-tune
+            addInstruction(DRIVE_DISTANCE, -5 * MM_PER_FOOT, 0);
+
             return null;
         }
 
@@ -180,7 +264,7 @@ public class OpModeOfficialAuton extends LinearOpMode {
         return null;
     }
 
-    private void addDriveInstruction(MovementInstruction.InstructionType instructionType, double... parameters) {
+    private void addInstruction(MovementInstruction.InstructionType instructionType, double... parameters) {
         MovementInstruction i = new MovementInstruction(instructionType, parameters);
         movementThread.addInstruction(i);
     }

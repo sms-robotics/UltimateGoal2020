@@ -4,29 +4,47 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 
 public class MovementBehaviors {
 
     private static final double TURN_TICKS_PER_DEGREE = 14.5;
     private static final double TICKS_PER_MILLIMETER = 8.0;
-    private static final double TURN_POWER = 0.5;
+    private static final double TURN_POWER = 0.25;
     private static final double DRIVE_DISTANCE_POWER = 0.5;
-    private static final double TURN_ERROR_THRESHOLD = 0.2;
+    private static final double TURN_ERROR_THRESHOLD_IN_DEGREES = 2;
+    private static final double MIN_TURN_POWER = 0.02;
+    private static final double MAX_TURN_POWER = 0.5;
+    public static final double MIN_MOTOR_SPEED = .01;
+
+    private final ActionConveyor conveyor;
+    private final ActionShooter shooter;
+    private final ActionTrigger trigger;
+    private final ActionWobbleArm wobbleArm;
+    private final SensorIMU sensorImu;
 
     LinearOpMode opMode;
     HardwareUltimate robot;
     Telemetry telemetry;
     ElapsedTime runtime = new ElapsedTime();
 
-    public MovementBehaviors(LinearOpMode opMode, HardwareUltimate robot) {
+    public MovementBehaviors(LinearOpMode opMode,
+                             HardwareUltimate robot,
+                             ActionConveyor conveyor,
+                             ActionShooter shooter,
+                             ActionTrigger trigger,
+                             ActionWobbleArm wobbleArm,
+                             SensorIMU sensorImu) {
         this.opMode = opMode;
         this.robot = robot;
         this.telemetry = opMode.telemetry;
+        this.conveyor = conveyor;
+        this.shooter = shooter;
+        this.trigger = trigger;
+        this.wobbleArm = wobbleArm;
+        this.sensorImu = sensorImu;
     }
 
     /*
@@ -39,10 +57,12 @@ public class MovementBehaviors {
 
     public double getError(double targetAngle) {
         double robotError;
+        double currentAngle = sensorImu.getAngle();
+
         // calculate error in -179 to +180 range  (
-        robotError = targetAngle - robot.imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
-        while (robotError > 180) robotError -= 360;
-        while (robotError <= -180) robotError += 360;
+        robotError = targetAngle - currentAngle;
+//        while (robotError > 180) robotError -= 360;
+//        while (robotError <= -180) robotError += 360;
         return robotError;
     }
 
@@ -50,7 +70,16 @@ public class MovementBehaviors {
     {
         setStraightDrivingModes();
 
-        double radAngle = Math.toRadians(angle);
+        double targetRadAngle = Math.toRadians(angle);
+        double actualRadAngle = Math.toRadians(sensorImu.getAngle());
+
+        double errorRadAngle = targetRadAngle - actualRadAngle;
+        double p = 1.0 * errorRadAngle;
+        double i = 0.0 * errorRadAngle;
+        double d = 0.0 * errorRadAngle;
+
+        double radAngle = p + i + d;
+
         double angleX = Math.sin(radAngle);
         double angleY = Math.cos(radAngle);
 
@@ -66,12 +95,6 @@ public class MovementBehaviors {
         robot.rearRightDrive.setTargetPosition(rearRightTarget);
         robot.rearLeftDrive.setTargetPosition(rearLeftTarget);
 
-        // holonomic formulas
-//        float FrontRight = gamepad1LeftY + gamepad1LeftX - gamepad1RightX;
-//        float FrontLeft = gamepad1LeftY - gamepad1LeftX + gamepad1RightX;
-//        float BackRight = gamepad1LeftY - gamepad1LeftX - gamepad1RightX;
-//        float BackLeft = gamepad1LeftY + gamepad1LeftX + gamepad1RightX;
-
         double frontRightDriveAmount = (angleY - angleX);
         double frontLeftDriveAmount = (angleY + angleX);
         double rearRightDriveAmount = (angleY + angleX);
@@ -83,10 +106,10 @@ public class MovementBehaviors {
         double rearLeftPower = DRIVE_DISTANCE_POWER * rearLeftDriveAmount;
 
         // If an extremely small power is set, the motor might indicate "busy" for a very long time, so don't do that.
-        if (Math.abs(frontRightPower) > .01) robot.frontRightDrive.setPower(frontRightPower);
-        if (Math.abs(frontLeftPower) > .01) robot.frontLeftDrive.setPower(frontLeftPower);
-        if (Math.abs(rearRightPower) > .01) robot.rearRightDrive.setPower(rearRightPower);
-        if (Math.abs(rearLeftPower) > .01) robot.rearLeftDrive.setPower(rearLeftPower);
+        if (Math.abs(frontRightPower) > MIN_MOTOR_SPEED) robot.frontRightDrive.setPower(frontRightPower);
+        if (Math.abs(frontLeftPower) > MIN_MOTOR_SPEED) robot.frontLeftDrive.setPower(frontLeftPower);
+        if (Math.abs(rearRightPower) > MIN_MOTOR_SPEED) robot.rearRightDrive.setPower(rearRightPower);
+        if (Math.abs(rearLeftPower) > MIN_MOTOR_SPEED) robot.rearLeftDrive.setPower(rearLeftPower);
 
         while (opMode.opModeIsActive() && (robot.frontRightDrive.isBusy() || robot.frontLeftDrive.isBusy() || robot.rearRightDrive.isBusy() || robot.rearLeftDrive.isBusy() )) {
             // Update telemetry & Allow time for other processes to run
@@ -104,13 +127,12 @@ public class MovementBehaviors {
 
     public void driveForTime(double forward, double right, double msToRun)
     {
-        telemetry.update();
-
         robot.frontRightDrive.setPower(forward + right);
         robot.frontLeftDrive.setPower(forward - right);
         robot.rearRightDrive.setPower(forward - right);
         robot.rearLeftDrive.setPower(forward + right);
         double intRunTime = runtime.milliseconds() + msToRun;
+
         while (runtime.milliseconds() < intRunTime) {
             telemetry.addData("drive-l", forward);
             telemetry.addData("drive-r", right);
@@ -118,6 +140,7 @@ public class MovementBehaviors {
             telemetry.update();
             opMode.idle();
         }
+
         robot.frontRightDrive.setPower(0.0);
         robot.frontLeftDrive.setPower(0.0);
         robot.rearRightDrive.setPower(0.0);
@@ -170,6 +193,7 @@ public class MovementBehaviors {
         robot.rearRightDrive.setPower(power);
         robot.rearLeftDrive.setPower(power);
     }
+
     public void startTurningRight(double power) {
         robot.frontRightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         robot.frontLeftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -248,7 +272,6 @@ public class MovementBehaviors {
         robot.rearLeftDrive.setPower(0);
     }
 
-
     public void turnTo(double degrees) {
         telemetry.addData("Turning To: ", degrees);
         telemetry.addData("encoder pos ", robot.frontRightDrive.getCurrentPosition());
@@ -259,36 +282,41 @@ public class MovementBehaviors {
         double error = getError(degrees);
 
         double turnPower = TURN_POWER;
+//
+//        if (error < 0) {
+//            startTurningLeft(turnPower);
+//        } else {
+//            startTurningRight(turnPower);
+//        }
 
-        if (error > 0) {
-            startTurningLeft(turnPower);
-        } else {
-            startTurningRight(turnPower);
-        }
         while (opMode.opModeIsActive()) {
+            stopWheels();
+
             error = getError(degrees);
 
-            if (Math.abs(error) < 15 && turnPower > TURN_POWER * .2) {
-                turnPower *= .95;
-                robot.frontRightDrive.setPower(turnPower);
-                robot.frontLeftDrive.setPower(turnPower);
-                robot.rearRightDrive.setPower(turnPower);
-                robot.rearLeftDrive.setPower(turnPower);
-            }
+            double targetTurnPower = Math.abs(error) / 45.0;
+            double normalizedTurnPower = Range.clip(targetTurnPower, MIN_TURN_POWER, MAX_TURN_POWER);
+
+            robot.frontRightDrive.setPower(normalizedTurnPower);
+            robot.frontLeftDrive.setPower(normalizedTurnPower);
+            robot.rearRightDrive.setPower(normalizedTurnPower);
+            robot.rearLeftDrive.setPower(normalizedTurnPower);
 
             telemetry.addData("Error is: ", error);
             telemetry.update();
-            if (Math.abs(error) < TURN_ERROR_THRESHOLD) {
+            if (Math.abs(error) < TURN_ERROR_THRESHOLD_IN_DEGREES) {
                 stopWheels();
                 opMode.idle();
                 break;
-            } else if (error > 0) {
+            } else if (error < 0) {
                 startTurningLeft(turnPower);
             } else {
                 startTurningRight(turnPower);
             }
             opMode.idle();
         }
+
+        stopWheels();
     }
 
     public void setRunUsingEncoderMode() {
@@ -312,4 +340,43 @@ public class MovementBehaviors {
         robot.rearRightDrive.setDirection(DcMotorSimple.Direction.FORWARD);
         robot.rearLeftDrive.setDirection(DcMotorSimple.Direction.REVERSE);
     }
+
+    public void waitForTimeInMilliseconds(double millisecondsToWait) {
+        double msRunTime = runtime.milliseconds() + millisecondsToWait;
+
+        while (runtime.milliseconds() < msRunTime && opMode.opModeIsActive()) {
+            opMode.idle();
+        }
+    }
+
+    public void turnOnCoveyor(double parameter) {
+        conveyor.turnOnAtPower(parameter);
+    }
+
+    public void turnOffCoveyor() {
+        conveyor.turnOff();
+    }
+
+    public void turnOnShooter(double parameter) {
+        shooter.turnOnAtPower(parameter);
+    }
+
+    public void turnOffShooter() {
+        shooter.turnOff();
+    }
+
+    public void moveWobbleArmToPosition(double positionAsPercentage, double atPower) {
+        wobbleArm.moveArmToPosition(positionAsPercentage, atPower);
+    }
+
+    public void fireTrigger(double millisecondsToWaitForTriggerSweep) {
+        trigger.fire();
+
+        waitForTimeInMilliseconds(millisecondsToWaitForTriggerSweep);
+
+        trigger.resetPosition();
+
+        waitForTimeInMilliseconds(millisecondsToWaitForTriggerSweep);
+    }
+
 }
