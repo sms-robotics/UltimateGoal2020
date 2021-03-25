@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import android.hardware.Sensor;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -10,6 +11,7 @@ import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.TouchSensor;
 
 import org.firstinspires.ftc.robotcore.external.Func;
 
@@ -25,7 +27,9 @@ public class HardwareUltimate
 
     private DcMotor shooter  = null;
     private DcMotor conveyor = null;
-    private DcMotor arm;
+    private DcMotor arm = null;
+    private TouchSensor touchUp = null;
+    private TouchSensor touchDown = null;
 
     /* Manipulator */
 
@@ -137,13 +141,23 @@ public class HardwareUltimate
         }
         catch (Exception p_exception) { };
 
-
         try
         {
             imu = this.hardwareMap.get(BNO055IMU.class, "imu");
         }
         catch (Exception p_exception) { };
 
+        try
+        {
+            touchUp = this.hardwareMap.get(TouchSensor.class, "wobbleup");
+        }
+        catch (Exception p_exception) { };
+
+        try
+        {
+            touchDown = this.hardwareMap.get(TouchSensor.class, "wobbledown");
+        }
+        catch (Exception p_exception) { };
     }
 
     public SensorIMU createAndInitializeIMU(LinearOpMode opMode) {
@@ -185,7 +199,7 @@ public class HardwareUltimate
     }
 
     public ActionWobbleArm createAndInitializeWobbleArm(LinearOpMode opMode) {
-        ActionWobbleArm actionWobbleArm = new ActionWobbleArm(arm, opMode);
+        ActionWobbleArm actionWobbleArm = new ActionWobbleArm(arm, opMode, touchUp, touchDown);
         actionWobbleArm.initialize();
         return actionWobbleArm;
     }

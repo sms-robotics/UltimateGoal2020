@@ -99,17 +99,17 @@ public class MovementInstruction {
             }
         }),
 
-        MOVE_WOBBLE_ARM_TO_POSITION(new Action() {
+        LOWER_WOBBLE_ARM(new Action() {
             @Override
             public void execute(MovementBehaviors behaviors, double... parameters) {
-                behaviors.moveWobbleArmToPosition(parameters[0], parameters[1]);
+                behaviors.lowerWobbleArmCompletely();
             }
         }),
 
-        WAIT_FOR_WOBBLE_ARM(new Action() {
+        RAISE_WOBBLE_ARM(new Action() {
             @Override
             public void execute(MovementBehaviors behaviors, double... parameters) {
-                behaviors.waitForWobbleArm(parameters[0]);
+                behaviors.raiseWobbleArmCompletely();
             }
         }),
 

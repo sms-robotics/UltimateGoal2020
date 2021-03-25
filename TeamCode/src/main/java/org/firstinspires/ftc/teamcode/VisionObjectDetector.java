@@ -54,7 +54,7 @@ public class VisionObjectDetector {
          * Do it here so that the Camera Stream window will have the TensorFlow annotations visible.
          **/
         if (tfod == null) {
-            throw new RuntimeException("VisioObjectDetector was not initialized!");
+            throw new RuntimeException("VisionObjectDetector was not initialized!");
         }
 
         tfod.activate();

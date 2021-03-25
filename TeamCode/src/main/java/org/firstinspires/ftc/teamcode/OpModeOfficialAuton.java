@@ -8,8 +8,8 @@ import java.util.ArrayList;
 
 import static org.firstinspires.ftc.teamcode.MovementInstruction.InstructionType.DRIVE_DISTANCE;
 import static org.firstinspires.ftc.teamcode.MovementInstruction.InstructionType.FIRE_RING;
-import static org.firstinspires.ftc.teamcode.MovementInstruction.InstructionType.MOVE_WOBBLE_ARM_TO_POSITION;
-import static org.firstinspires.ftc.teamcode.MovementInstruction.InstructionType.WAIT_FOR_WOBBLE_ARM;
+import static org.firstinspires.ftc.teamcode.MovementInstruction.InstructionType.LOWER_WOBBLE_ARM;
+import static org.firstinspires.ftc.teamcode.MovementInstruction.InstructionType.RAISE_WOBBLE_ARM;
 import static org.firstinspires.ftc.teamcode.MovementInstruction.InstructionType.TURN_OFF_CONVEYOR;
 import static org.firstinspires.ftc.teamcode.MovementInstruction.InstructionType.TURN_OFF_SHOOTER;
 import static org.firstinspires.ftc.teamcode.MovementInstruction.InstructionType.TURN_ON_CONVEYOR;
@@ -61,6 +61,10 @@ public class OpModeOfficialAuton extends LinearOpMode {
     public void runOpMode() {
         long timesRun = 0;
 
+        // Send telemetry message to signify robot waiting;
+        telemetry.addData("Status", "Reticulating splines...");    //
+        telemetry.update();
+
         /* Initialize the hardware variables.
          * The init() method of the hardware class does all the work here
          */
@@ -76,10 +80,6 @@ public class OpModeOfficialAuton extends LinearOpMode {
 
         movementBehaviors = robot.createAndInitializeMovementBehaviors(this, conveyor, shooter, trigger, wobbleArm, sensorImu);
 
-        // Send telemetry message to signify robot waiting;
-        telemetry.addData("Say", "I am alive");    //
-        telemetry.update();
-
         movementThread = new MovementThread(this, movementBehaviors);
         Thread t = new Thread(movementThread);
         t.start();
@@ -89,6 +89,10 @@ public class OpModeOfficialAuton extends LinearOpMode {
 
         webcamScanner.goToNeutral();
         visionManager.activate();
+
+        // Send telemetry message to signify robot waiting;
+        telemetry.addData("Status", "Ready to roll!");    //
+        telemetry.update();
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
@@ -164,7 +168,7 @@ public class OpModeOfficialAuton extends LinearOpMode {
 
         webcamScanner.loop(50);
 
-        if (webcamScanner.isDoneScanning() && runtime.seconds() > 3) {
+        if (webcamScanner.isDoneScanning() && runtime.seconds() > 1.5) {
             double howManySecondsAgoSawSingleRing = visionManager.getHowManySecondsAgoSawSingleRing();
             double howManySecondsAgoSawQuadRings = visionManager.getHowManySecondsAgoSawQuadRings();
 
@@ -185,46 +189,40 @@ public class OpModeOfficialAuton extends LinearOpMode {
         return null;
     }
 
+    private void queueStandardFiringSequence() {
+        // Turn on shooter at 90% power
+        addInstruction(TURN_ON_SHOOTER, 1.0);
+        // Turn back to fire the rings into the top slot
+        addInstruction(TURN_TO, -3);
+        // Give time for the shooter to come up to speed
+        addInstruction(WAIT_FOR_TIME, 1000);
+        // FIRE and wait 2 seconds for the trigger to sweep
+        addInstruction(FIRE_RING);
+        // Turn on conveyor at 75% power
+        addInstruction(TURN_ON_CONVEYOR, 0.75);
+        // The first ring is right there
+        addInstruction(WAIT_FOR_TIME, 1500);
+        // FIRE and wait 2 seconds for the trigger to sweep
+        addInstruction(FIRE_RING);
+        // Wait three seconds
+        addInstruction(WAIT_FOR_TIME, 1600);
+        // FIRE and wait 2 seconds for the trigger to sweep up and back
+        addInstruction(FIRE_RING);
+        // Turn these off while we park
+        addInstruction(TURN_OFF_SHOOTER);
+        addInstruction(TURN_OFF_CONVEYOR);
+    }
+
     // DRIVE_TO_A:
     private AutonState doDriveToA(long timesRun) {
         if (timesRun == 0) {
             // Drive for 5 ft forward at heading 0 degrees at 50% speed
-            addInstruction(DRIVE_DISTANCE, 5 * MM_PER_FOOT, 0, 0.5);
-            // Turn 45 degrees to the left (hence the negative)
-            addInstruction(TURN_TO, -45);
-            // Move the wobble arm to zero position at 25% power
-            addInstruction(MOVE_WOBBLE_ARM_TO_POSITION, 1.0, 0.25);
-            // Wait at most 4 seconds for it to do its thing
-            addInstruction(WAIT_FOR_WOBBLE_ARM, 4000);
-            // Turn back to fire the rings into the top slot
-            addInstruction(TURN_TO, 0);
-            // Turn on shooter at 90% power
-            addInstruction(TURN_ON_SHOOTER, 0.9);
-            // Turn on conveyor at 75% power
-            addInstruction(TURN_ON_CONVEYOR, 0.75);
-            // Wait three seconds (3000 milliseconds)
-            addInstruction(WAIT_FOR_TIME, 3000);
-            // FIRE and wait 2 seconds for the trigger to sweep
-            addInstruction(FIRE_RING, 2000);
-            // Wait three seconds
-            addInstruction(WAIT_FOR_TIME, 3000);
-            // FIRE and wait 2 seconds for the trigger to sweep up and back
-            addInstruction(FIRE_RING, 2000);
-            // Wait three seconds
-            addInstruction(WAIT_FOR_TIME, 3000);
-            // FIRE and wait 2 seconds for the trigger to sweep up and back
-            addInstruction(FIRE_RING, 2000);
-            // Turn these off while we park
-            addInstruction(TURN_OFF_SHOOTER);
-            addInstruction(TURN_OFF_CONVEYOR);
-            addInstruction(TURN_TO, 0);
-            // Drive straight back to parked position
-            // NOTE: we'll have to adjust this because we
-            // didn't start on the line, but we'll worry about
-            // that when we can fine-tune
-            //
-            // Drive back 5 feet at 50% speed at 0 degrees (wrong!.. fixme!)
-            addInstruction(DRIVE_DISTANCE, -5 * MM_PER_FOOT, 0, 0.5);
+            addInstruction(DRIVE_DISTANCE, 4.9 * MM_PER_FOOT, 0, 0.75);
+            queueStandardFiringSequence();
+            addInstruction(TURN_TO, -60);
+            addInstruction(DRIVE_DISTANCE, 0.6 * MM_PER_FOOT, 0, 0.5);
+            // Move the wobble arm to zero position
+            addInstruction(LOWER_WOBBLE_ARM);
 
             return null;
         }
@@ -239,44 +237,15 @@ public class OpModeOfficialAuton extends LinearOpMode {
 
     private AutonState doDriveToB(long timesRun) {
         if (timesRun == 0) {
-            // TODO: I think we can just figure out what the angle to drive at should be
-            addInstruction(DRIVE_DISTANCE, 7 * MM_PER_FOOT, -5.0, 0.5);
-            // Get the wobble arm in the square
-            addInstruction(TURN_TO, -45);
-            // Move the wobble arm to zero position at 25% power
-            addInstruction(MOVE_WOBBLE_ARM_TO_POSITION, 1.0, 0.25);
-            // Wait at most 4 seconds for it to do its thing
-            addInstruction(WAIT_FOR_WOBBLE_ARM, 4000);
-            // Turn back to fire the rings into the top slot
-            addInstruction(TURN_TO, 0);
-            // Drive back behind the launch zone -2ft
-            // TODO: Would need to use the same angle
-            addInstruction(DRIVE_DISTANCE, -2 * MM_PER_FOOT, -5.0, 0.5);
-            // Turn on shooter at 90% power
-            addInstruction(TURN_ON_SHOOTER, 0.9);
-            // Turn on conveyor at 75% power
-            addInstruction(TURN_ON_CONVEYOR, 0.75);
-            // Wait three seconds
-            addInstruction(WAIT_FOR_TIME, 3000);
-            // FIRE and wait 2 seconds for the trigger to sweep
-            addInstruction(FIRE_RING, 2000);
-            // Wait three seconds
-            addInstruction(WAIT_FOR_TIME, 3000);
-            // FIRE and wait 2 seconds for the trigger to sweep
-            addInstruction(FIRE_RING, 2000);
-            // Wait three seconds
-            addInstruction(WAIT_FOR_TIME, 3000);
-            // FIRE and wait 2 seconds for the trigger to sweep
-            addInstruction(FIRE_RING, 2000);
-            // Turn these off while we park
-            addInstruction(TURN_OFF_SHOOTER);
-            addInstruction(TURN_OFF_CONVEYOR);
-            addInstruction(TURN_TO, 0);
-            // Drive straight back to parked position
-            // NOTE: we'll have to adjust this because we
-            // didn't start on a line, but we'll worry about
-            // that when we can fine-tune
-            addInstruction(DRIVE_DISTANCE, -5 * MM_PER_FOOT, 0);
+            // Drive for 5 ft forward at heading 0 degrees at 50% speed
+            addInstruction(DRIVE_DISTANCE, 4.9 * MM_PER_FOOT, 0, 0.75);
+
+            queueStandardFiringSequence();
+
+            addInstruction(DRIVE_DISTANCE, 2 * MM_PER_FOOT, 0, 0.5);
+            // Move the wobble arm to zero position
+            addInstruction(LOWER_WOBBLE_ARM);
+            addInstruction(DRIVE_DISTANCE, -1 * MM_PER_FOOT, 0, 0.5);
 
             return null;
         }
@@ -291,9 +260,17 @@ public class OpModeOfficialAuton extends LinearOpMode {
 
     private AutonState doDriveToC(long timesRun) {
         if (timesRun == 0) {
-            // TODO: I think we can just figure out what the angle to drive at should be
-            addInstruction(DRIVE_DISTANCE, 2 * MM_PER_FOOT, -15.0, 0.5);
-            addInstruction(DRIVE_DISTANCE, -2 * MM_PER_FOOT, -15.0, 0.5);
+            // Drive for 5 ft forward at heading 0 degrees at 50% speed
+            addInstruction(DRIVE_DISTANCE, 4.9 * MM_PER_FOOT, 0, 0.75);
+
+            queueStandardFiringSequence();
+
+            addInstruction(DRIVE_DISTANCE, 3 * MM_PER_FOOT, 0, 0.6);
+            addInstruction(TURN_TO, -60);
+            addInstruction(DRIVE_DISTANCE, 0.6 * MM_PER_FOOT, 0, 0.7);
+            addInstruction(LOWER_WOBBLE_ARM);
+
+            addInstruction(DRIVE_DISTANCE, -3 * MM_PER_FOOT, 60, 0.75);
 
             return null;
         }

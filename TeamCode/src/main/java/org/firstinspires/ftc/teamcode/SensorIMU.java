@@ -8,7 +8,10 @@ import com.qualcomm.robotcore.util.RobotLog;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import org.firstinspires.ftc.robotcore.external.navigation.Position;
+import org.firstinspires.ftc.robotcore.external.navigation.Velocity;
 
 
 public class SensorIMU {
@@ -41,6 +44,18 @@ public class SensorIMU {
                  opMode.idle();
              }
         }
+    }
+
+    public void startAccelerationIntegration() {
+        imu.startAccelerationIntegration(new Position(DistanceUnit.MM, 0, 0, 0, 0), new Velocity(DistanceUnit.MM, 0.0, 0.0, 0.0, 0), 100);
+    }
+
+    public void stopAccelerationIntegration() {
+        imu.stopAccelerationIntegration();
+    }
+
+    public Position getPosition() {
+        return imu.getPosition();
     }
 
     /**
