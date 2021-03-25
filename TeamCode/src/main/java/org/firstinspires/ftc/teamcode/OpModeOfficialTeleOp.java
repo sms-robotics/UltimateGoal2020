@@ -140,17 +140,19 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
             backRight = Range.clip(backRight, -1, 1) * powerReducer;
 
             // write the values to the motors
+
             robot.frontRightDrive.setPower(frontRight);
             robot.frontLeftDrive.setPower(frontLeft);
             robot.rearLeftDrive.setPower(backLeft);
             robot.rearRightDrive.setPower(backRight);
 
             // Job #1: conveyor
-            if (gamepad2.left_trigger > 0.10) {
-                conveyor.turnOn();
-            } else {
-                conveyor.turnOff();
-            }
+            // if (gamepad2.y){
+            //     conveyor.turnOff();
+            // }
+            // else if(gamepad2.x){
+            //     conveyor.turnOn();
+            // }
 
             // Job #2: ARM
             if (gamepad2.dpad_up){
@@ -166,7 +168,19 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
                 shooter.turnOn();
             }
 
-            // Change shooter speed
+            if (gamepad2.left_trigger > 0.10) {
+                conveyor.turnOn();
+            } else {
+                conveyor.turnOff();
+            }
+
+            // if (gamepad2.right_trigger > 0.10) {
+            //     shooter.turnOn();
+            // } else {
+            //     shooter.turnOff();
+            // }
+
+            // Job #2: ARM
             boolean dpad_check;
             dpad_check = gamepad2.dpad_left;
             if (dpad_check && (dpad_check != previousDPL)) {

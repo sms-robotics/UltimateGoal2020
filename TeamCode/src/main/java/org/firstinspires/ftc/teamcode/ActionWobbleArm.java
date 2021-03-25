@@ -66,14 +66,14 @@ public class ActionWobbleArm {
         if (currentCommandedPosition == Integer.MAX_VALUE) {
             currentCommandedPosition = zeroPosition;
         }
-
+        
         // Turn off motor and exit if at limit
         if (WobbleDown.isPressed() == true) {
-            armMotor.setPower(0.0);
-            currentCommandedPosition = armMotor.getCurrentPosition();
-            return;
+                armMotor.setPower(0.0);
+                currentCommandedPosition = armMotor.getCurrentPosition();
+                return;
         }
-
+        
         // Don't let it get too far ahead
         if (Math.abs(armMotor.getCurrentPosition() - currentCommandedPosition) > 2 * LOWER_ARM_ENCODER_COUNTS_INCREMENT) {
             return;
@@ -88,11 +88,11 @@ public class ActionWobbleArm {
     public void raiseArm() {
         raiseArmByAmountLimited(RAISE_ARM_ENCODER_COUNTS_INCREMENT);
     }
-
+    
     public void lowerArmFully() {
         lowerArmFully(3000);
     }
-
+    
     public void lowerArmFully(int timeoutInMs) {
         int clippedTimeoutInMs = Math.max(timeoutInMs, 0);
 
@@ -110,11 +110,11 @@ public class ActionWobbleArm {
         maxPosition = armMotor.getCurrentPosition();
         currentCommandedPosition = armMotor.getCurrentPosition();
     }
-
+    
     public void raiseArmFully() {
         raiseArmFully(3000);
     }
-
+    
     public void raiseArmFully(int timeoutInMs) {
         int clippedTimeoutInMs = Math.max(timeoutInMs, 0);
 
@@ -156,11 +156,11 @@ public class ActionWobbleArm {
 
         // Turn off motor and exit if at limit
         if (WobbleUp.isPressed() == true) {
-            armMotor.setPower(0.0);
-            currentCommandedPosition = armMotor.getCurrentPosition();
-            return;
+                armMotor.setPower(0.0);
+                currentCommandedPosition = armMotor.getCurrentPosition();
+                return;
         }
-
+        
         // Don't let it get too far ahead
         if (Math.abs(armMotor.getCurrentPosition() - currentCommandedPosition) > 2 * LOWER_ARM_ENCODER_COUNTS_INCREMENT) {
             return;

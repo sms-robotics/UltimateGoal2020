@@ -27,7 +27,7 @@ public class VisionManager {
     private CameraManager cameraManager;
     private WebcamName cameraName;
     private Camera camera;
-    private boolean debugImageCaptureEnabled = true;
+    private boolean debugImageCaptureEnabled = false;
 
     /**
      * {@link #vuforia} is the variable we will use to store our instance of the Vuforia
@@ -77,20 +77,20 @@ public class VisionManager {
     public void loop() {
         objectDetector.loop();
         navigator.loop();
-//
-//        try {
-//            VuforiaLocalizer.CloseableFrame frame = vuforia.getFrameQueue().poll(10, TimeUnit.MILLISECONDS);
-//            if (frame != null) {
-//                Bitmap bitmap = vuforia.convertFrameToBitmap(frame);
-//
-//                onNewBitmapAvailable(bitmap);
-//
-//                bitmap.recycle();
-//                frame.close();
-//            }
-//        } catch (Exception e) {
-//            RobotLog.ee(TAG, e, "Error processing Vuforia frame");
-//        }
+
+        try {
+            VuforiaLocalizer.CloseableFrame frame = vuforia.getFrameQueue().poll(10, TimeUnit.MILLISECONDS);
+            if (frame != null) {
+                Bitmap bitmap = vuforia.convertFrameToBitmap(frame);
+
+                onNewBitmapAvailable(bitmap);
+
+                bitmap.recycle();
+                frame.close();
+            }
+        } catch (Exception e) {
+            RobotLog.ee(TAG, e, "Error processing Vuforia frame");
+        }
     }
 
     public void shutdown() {

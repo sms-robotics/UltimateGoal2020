@@ -1,19 +1,22 @@
 <?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
 <Robot type="FirstInspires-FTC">
+    <Webcam name="Webcam 1" serialNumber="A06B10EF" />
     <LynxUsbDevice name="Control Hub Portal" serialNumber="(embedded)" parentModuleAddress="173">
         <LynxModule name="Drivetrain" port="5">
-            <RevRobotics40HDHexMotor name="rr" port="0" />
-            <RevRobotics40HDHexMotor name="rl" port="1" />
-            <RevRobotics40HDHexMotor name="fl" port="2" />
-            <RevRobotics40HDHexMotor name="fr" port="3" />
-            <LynxEmbeddedIMU name="imu" port="0" bus="0" />
+            <RevRobotics40HDHexMotor name="fr" port="0" />
+            <RevRobotics40HDHexMotor name="fl" port="1" />
+            <RevRobotics40HDHexMotor name="rl" port="2" />
+            <RevRobotics40HDHexMotor name="rr" port="3" />
         </LynxModule>
         <LynxModule name="Control Hub" port="173">
-            <RevRobotics40HDHexMotor name="wobble" port="1" />
-            <RevRobotics40HDHexMotor name="in" port="2" />
+            <RevRobotics40HDHexMotor name="wobble" port="0" />
+            <RevRobotics40HDHexMotor name="in" port="1" />
             <RevRoboticsUltraplanetaryHDHexMotor name="out" port="3" />
+            <Servo name="cam" port="4" />
             <Servo name="fire" port="5" />
-<!--            <LynxEmbeddedIMU name="imu 1" port="0" bus="0" />-->
+            <RevTouchSensor name="wobbleup" port="1" />
+            <RevTouchSensor name="wobbledown" port="3" />
+            <LynxEmbeddedIMU name="imu" port="0" bus="0" />
         </LynxModule>
     </LynxUsbDevice>
 </Robot>

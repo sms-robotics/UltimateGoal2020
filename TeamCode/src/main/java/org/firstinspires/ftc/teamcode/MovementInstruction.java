@@ -21,7 +21,7 @@ public class MovementInstruction {
         FIRE_RING(new Action() {
             @Override
             public void execute(MovementBehaviors behaviors, double... parameters) {
-                behaviors.fireTrigger(parameters[0]);
+                behaviors.fireTrigger(1000);
             }
         }),
 

@@ -22,9 +22,6 @@ public class MovementThread implements Runnable {
          * The init() method of the hardware class does all the work here
          */
 
-        opMode.telemetry.addLine("Thread is waiting");
-        opMode.telemetry.update();
-
         opMode.waitForStart();
 
         while (opMode.opModeIsActive()) {

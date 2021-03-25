@@ -80,7 +80,7 @@ public class MovementBehaviors {
 
     private double motorPowerCompensator(MOTOR motor, double power) {
         if (motor == MOTOR.FR) {
-            return 1.03 * power;
+            return 1.0 * power;
         }
         if (motor == MOTOR.FL) {
             return 1.0 * power;
@@ -91,7 +91,7 @@ public class MovementBehaviors {
         if (motor == MOTOR.RL) {
             return 1.0 * power;
         }
-
+        
         return power;
     }
 
@@ -131,13 +131,13 @@ public class MovementBehaviors {
         double rearRightDriveAmount = (angleY + angleX);
         double rearLeftDriveAmount = (angleY - angleX);
 
-        double frontRightPower = motorPowerCompensator(MOTOR.FR,
+        double frontRightPower = motorPowerCompensator(MOTOR.FR, 
             clippedPower * frontRightDriveAmount);
-        double frontLeftPower = motorPowerCompensator(MOTOR.FL,
+        double frontLeftPower = motorPowerCompensator(MOTOR.FL, 
             clippedPower * frontLeftDriveAmount);
-        double rearRightPower = motorPowerCompensator(MOTOR.RR,
+        double rearRightPower = motorPowerCompensator(MOTOR.RR, 
             clippedPower * rearRightDriveAmount);
-        double rearLeftPower = motorPowerCompensator(MOTOR.RL,
+        double rearLeftPower = motorPowerCompensator(MOTOR.RL, 
             clippedPower * rearLeftDriveAmount);
 
         // If an extremely small power is set, the motor might indicate "busy" for a very long time, so don't do that.
@@ -174,20 +174,20 @@ public class MovementBehaviors {
         sensorImu.startAccelerationIntegration();
 
         while (true
-            && !opMode.isStopRequested()
-            && elapsedTime.milliseconds() < clippedTimeoutInMs) {
+                && !opMode.isStopRequested()
+                && elapsedTime.milliseconds() < clippedTimeoutInMs) {
 
             double headingError = getError(heading);
-
+            
             // Adjust based on angle of field
             double angleOfFieldInDegrees = sensorImu.getAngle();
             double angleOfFieldInRadians = Math.toRadians(angleOfFieldInDegrees);
-
+            
             double leftX = 0; //Math.sin(targetRadHeading);
             double leftY = 1;//-Math.cos(targetRadHeading);
 
             // float refAngle = (float)targetRadHeading;
-
+            
             // float leftX = (float) (gamepad1LeftX * Math.cos(refAngle) + gamepad1LeftY * Math.sin(refAngle));
             // float leftY = (float) (gamepad1LeftY * Math.cos(refAngle) - gamepad1LeftX * Math.sin(refAngle));
 
@@ -195,7 +195,7 @@ public class MovementBehaviors {
             double frontLeft = leftY - leftX;
             double backRight = leftY - leftX;
             double backLeft = leftY + leftX;
-
+            
             RobotLog.i("FOO", String.format("frontRight: %f", frontRight));
             RobotLog.i("FOO", String.format("frontLeft: %f", frontLeft));
 
@@ -235,7 +235,7 @@ public class MovementBehaviors {
 
             RobotLog.i(sensorImu.getPosition().toString());
         }
-
+        
         robot.frontRightDrive.setPower(0);
         robot.frontLeftDrive.setPower(0);
         robot.rearLeftDrive.setPower(0);
@@ -267,10 +267,6 @@ public class MovementBehaviors {
     }
 
     public void turn(double degrees) {
-        telemetry.addData("Turning ", degrees);
-        telemetry.addData("encoder pos ", robot.frontRightDrive.getCurrentPosition());
-        telemetry.update();
-
         int targetPosition = (int)(degrees * TURN_TICKS_PER_DEGREE);
         int frontRightTarget = robot.frontRightDrive.getCurrentPosition() - (int)(targetPosition);
         int frontLeftTarget = robot.frontLeftDrive.getCurrentPosition() + (int)(targetPosition);

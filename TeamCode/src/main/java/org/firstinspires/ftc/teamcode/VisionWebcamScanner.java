@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.util.Range;
 import com.qualcomm.robotcore.hardware.Servo;
 
 /**
@@ -27,9 +28,9 @@ import com.qualcomm.robotcore.hardware.Servo;
  * }
  */
 public class VisionWebcamScanner {
-    static final double STARTING_POSITION = 0.75;
-    static final double ENDING_POSITION = 0.9;
-    static final double NEUTRAL_POSITION = 0.75;
+    static final double STARTING_POSITION = 0.5;
+    static final double ENDING_POSITION = 0.6;
+    static final double NEUTRAL_POSITION = 0.5;
     static final double SCAN_INCREMENT = 0.01;
 
     private Servo servo;
@@ -37,7 +38,7 @@ public class VisionWebcamScanner {
     private long timeOfLastLoop;
 
     public void initialize(HardwareMap hardwareMap) {
-        servo = hardwareMap.get(Servo.class, "webcam_servo");
+        servo = hardwareMap.get(Servo.class, "cam");
         timeSinceLastMove = 0;
         timeOfLastLoop = 0;
     }
@@ -71,12 +72,16 @@ public class VisionWebcamScanner {
     }
 
     public void turnRight() {
-        double newPosition = servo.getPosition() + SCAN_INCREMENT;
+        double newPosition = Range.clip(servo.getPosition() + SCAN_INCREMENT, 
+            STARTING_POSITION, ENDING_POSITION);
+            
         servo.setPosition(newPosition);
     }
 
     public void turnLeft() {
-        double newPosition = servo.getPosition() - SCAN_INCREMENT;
+        double newPosition = Range.clip(servo.getPosition() - SCAN_INCREMENT, 
+            STARTING_POSITION, ENDING_POSITION);
+            
         servo.setPosition(newPosition);
     }
 

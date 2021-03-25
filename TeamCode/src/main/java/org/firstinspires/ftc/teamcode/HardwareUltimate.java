@@ -30,7 +30,7 @@ public class HardwareUltimate
     private DcMotor arm = null;
     private TouchSensor touchUp = null;
     private TouchSensor touchDown = null;
-
+    
     /* Manipulator */
 
 //    public DcMotor armShoulder = null;
