@@ -19,7 +19,7 @@ public class SensorIMU {
     private static final double MAX_TIME_TO_ALLOW_CALIBRATION_MS = 2000;
     private final BNO055IMU imu;
     Orientation lastAngles = new Orientation();
-    double globalAngle = 0;
+    static double globalAngle = 0;
 
     public SensorIMU(BNO055IMU imu) {
         this.imu = imu;
@@ -37,12 +37,12 @@ public class SensorIMU {
         ElapsedTime elapsedTime = new ElapsedTime();
 
         if (opMode != null) {
-             // make sure the imu gyro is calibrated before continuing.
-             while (!opMode.isStopRequested() && !imu.isGyroCalibrated() && elapsedTime.milliseconds() < MAX_TIME_TO_ALLOW_CALIBRATION_MS)
-             {
-                 opMode.sleep(50);
-                 opMode.idle();
-             }
+            // make sure the imu gyro is calibrated before continuing.
+            while (!opMode.isStopRequested() && !imu.isGyroCalibrated() && elapsedTime.milliseconds() < MAX_TIME_TO_ALLOW_CALIBRATION_MS)
+            {
+                opMode.sleep(50);
+                opMode.idle();
+            }
         }
     }
 

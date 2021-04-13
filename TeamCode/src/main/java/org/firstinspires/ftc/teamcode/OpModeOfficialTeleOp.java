@@ -71,7 +71,9 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
 
         runtime.reset();
 
-        imu.resetAngle();
+        // IMPORTANT: we don't want to init the angle because
+        // we don't know where auton left it
+        //imu.resetAngle();
 
         // Wherever the wobble arm is when you press PLAY is where
         // it thinks "zero" is
@@ -164,8 +166,10 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
             // Job #3: Shooter
             if (gamepad2.b){
                 shooter.turnOff();
-            }   else if (gamepad2.a){
-                shooter.turnOn();
+            } else if (gamepad2.a){
+                shooter.turnOnAtPower(1.0);
+            } else if (gamepad2.x){
+                shooter.turnOnAtPower(0.65);
             }
 
             if (gamepad2.left_trigger > 0.10) {

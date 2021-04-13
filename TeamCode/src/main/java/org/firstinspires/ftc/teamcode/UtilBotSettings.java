@@ -51,6 +51,8 @@ public class UtilBotSettings {
 
     private String webcamName = "Webcam 1";
 
+    private String whichBot = "10645";
+
     private double visionObjectDetectionMinResultConfidence = 0.8;
 
     //---------------------------------------------------------------------------------------------
@@ -69,6 +71,7 @@ public class UtilBotSettings {
     // have in the vuforiaKey variable."
     //---------------------------------------------------------------------------------------------
     private void loadImpl(JSONObject jsonObject) {
+        this.whichBot = extractString(jsonObject, "whichBot", this.whichBot);
         this.vuforiaKey = extractString(jsonObject, "vuforiaKey", this.vuforiaKey);
         this.tensorFlowCameraMagnification = extractDouble(jsonObject, "tensorFlowCameraMagnification", this.tensorFlowCameraMagnification);
         this.tensorFlowCameraAspectRatio = extractDouble(jsonObject, "tensorFlowCameraAspectRatio", this.tensorFlowCameraAspectRatio);
@@ -96,6 +99,10 @@ public class UtilBotSettings {
 
     public String getWebcamName() {
         return webcamName;
+    }
+
+    public String getWhichBot() {
+        return whichBot;
     }
 
     public double getVisionObjectDetectionMinResultConfidence() {

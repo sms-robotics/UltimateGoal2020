@@ -8,10 +8,15 @@ import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
+// Wobble Arm
+
 public class ActionWobbleArm {
-    static final int LOWER_ARM_ENCODER_COUNTS_INCREMENT = 25;
-    static final int RAISE_ARM_ENCODER_COUNTS_INCREMENT = 25;
+    static final int LOWER_ARM_ENCODER_COUNTS_INCREMENT = 30;
+    static final int RAISE_ARM_ENCODER_COUNTS_INCREMENT = 30;
+    static final double ARM_MOTOR_SPEED = 0.45;
     static final int MAX_ENCODER_COUNTS = 1500;
+    static final int LOWER_WOBBLE_TIMEOUT = 5000;
+    static final int RAISE_WOBBLE_TIMEOUT = 5000;
 
     private final DcMotor armMotor;
     private final LinearOpMode opMode;
@@ -34,6 +39,7 @@ public class ActionWobbleArm {
         armMotor.setDirection(DcMotor.Direction.FORWARD);
         armMotor.setTargetPosition(0);
         armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rememberThisAsTheZeroPosition();
     }
 
@@ -59,40 +65,40 @@ public class ActionWobbleArm {
         currentCommandedPosition = Range.clip(currentCommandedPosition + byAmountInEncoderCounts, zeroPosition, maxPosition);
 
         armMotor.setTargetPosition(currentCommandedPosition);
-        armMotor.setPower(0.25);
+        armMotor.setPower(ARM_MOTOR_SPEED);
     }
 
     public void lowerArmByAmountLimited(int byAmountInEncoderCounts) {
         if (currentCommandedPosition == Integer.MAX_VALUE) {
             currentCommandedPosition = zeroPosition;
         }
-        
+
         // Turn off motor and exit if at limit
         if (WobbleDown.isPressed() == true) {
-                armMotor.setPower(0.0);
-                currentCommandedPosition = armMotor.getCurrentPosition();
-                return;
+            armMotor.setPower(0.0);
+            currentCommandedPosition = armMotor.getCurrentPosition();
+            return;
         }
-        
+
         // Don't let it get too far ahead
         if (Math.abs(armMotor.getCurrentPosition() - currentCommandedPosition) > 2 * LOWER_ARM_ENCODER_COUNTS_INCREMENT) {
             return;
         }
 
-        currentCommandedPosition = currentCommandedPosition + byAmountInEncoderCounts;
+        currentCommandedPosition = armMotor.getCurrentPosition() + byAmountInEncoderCounts;
 
         armMotor.setTargetPosition(currentCommandedPosition);
-        armMotor.setPower(0.25);
+        armMotor.setPower(ARM_MOTOR_SPEED);
     }
 
     public void raiseArm() {
         raiseArmByAmountLimited(RAISE_ARM_ENCODER_COUNTS_INCREMENT);
     }
-    
+
     public void lowerArmFully() {
-        lowerArmFully(3000);
+        lowerArmFully(LOWER_WOBBLE_TIMEOUT);
     }
-    
+
     public void lowerArmFully(int timeoutInMs) {
         int clippedTimeoutInMs = Math.max(timeoutInMs, 0);
 
@@ -110,11 +116,11 @@ public class ActionWobbleArm {
         maxPosition = armMotor.getCurrentPosition();
         currentCommandedPosition = armMotor.getCurrentPosition();
     }
-    
+
     public void raiseArmFully() {
-        raiseArmFully(3000);
+        raiseArmFully(RAISE_WOBBLE_TIMEOUT);
     }
-    
+
     public void raiseArmFully(int timeoutInMs) {
         int clippedTimeoutInMs = Math.max(timeoutInMs, 0);
 
@@ -146,7 +152,7 @@ public class ActionWobbleArm {
         currentCommandedPosition = Range.clip(currentCommandedPosition - byAmountInEncoderCounts, zeroPosition, maxPosition);
 
         armMotor.setTargetPosition(currentCommandedPosition);
-        armMotor.setPower(0.25);
+        armMotor.setPower(ARM_MOTOR_SPEED);
     }
 
     public void raiseArmByAmountLimited(int byAmountInEncoderCounts) {
@@ -156,21 +162,20 @@ public class ActionWobbleArm {
 
         // Turn off motor and exit if at limit
         if (WobbleUp.isPressed() == true) {
-                armMotor.setPower(0.0);
-                currentCommandedPosition = armMotor.getCurrentPosition();
-                return;
-        }
-        
-        // Don't let it get too far ahead
-        if (Math.abs(armMotor.getCurrentPosition() - currentCommandedPosition) > 2 * LOWER_ARM_ENCODER_COUNTS_INCREMENT) {
+            armMotor.setPower(0.0);
+            currentCommandedPosition = armMotor.getCurrentPosition();
             return;
         }
 
+        // Don't let it get too far ahead
+        // if (Math.abs(armMotor.getCurrentPosition() - currentCommandedPosition) > 2 * RAISE_ARM_ENCODER_COUNTS_INCREMENT) {
+        //     return;
+        // }
 
-        currentCommandedPosition = currentCommandedPosition - byAmountInEncoderCounts;
+        currentCommandedPosition = armMotor.getCurrentPosition() - byAmountInEncoderCounts;
 
         armMotor.setTargetPosition(currentCommandedPosition);
-        armMotor.setPower(0.25);
+        armMotor.setPower(ARM_MOTOR_SPEED);
     }
 
     public void moveArmToPosition(double percent, double atPower) {

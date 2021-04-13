@@ -20,6 +20,13 @@ import static org.firstinspires.ftc.teamcode.MovementInstruction.InstructionType
 @Autonomous(name="SMS Auton", group="Production")
 public class OpModeOfficialAuton extends LinearOpMode {
     private static final double MM_PER_FOOT = 304.8;
+    private static final double HEADING_COMP_10644 = 5;
+    private static final double HEADING_COMP_10645 = 8;
+    private static final double DISTANCE_STD_10644 = 4.9;
+    private static final double DISTANCE_STD_10645 = 4.8;
+
+    private double heading_comp = HEADING_COMP_10645;
+    private double distance_std = DISTANCE_STD_10645;
 
     /* Declare OpMode members. */
     HardwareUltimate robot = new HardwareUltimate();   // Use a Pushbot's hardware
@@ -60,6 +67,16 @@ public class OpModeOfficialAuton extends LinearOpMode {
     @Override
     public void runOpMode() {
         long timesRun = 0;
+
+        String whichBot = UtilBotSettings.sharedInstance().getWhichBot();
+
+        if (whichBot == "10645") {
+            heading_comp = HEADING_COMP_10645;
+            distance_std = DISTANCE_STD_10645;
+        } else {
+            heading_comp = HEADING_COMP_10644;
+            distance_std = DISTANCE_STD_10644;
+        }
 
         // Send telemetry message to signify robot waiting;
         telemetry.addData("Status", "Reticulating splines...");    //
@@ -105,11 +122,13 @@ public class OpModeOfficialAuton extends LinearOpMode {
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
+            telemetry.addData("Bot     ", whichBot);
             telemetry.addData("Our State     ", state.name());
             telemetry.addData("Time          ", String.format("%3.2f seconds", runtime.seconds()));
             telemetry.addData("#Instructions ", movementThread.getHowManyInstructions());
             telemetry.addData("Last saw Quad rings    ", String.format("%3.2f seconds ago", visionManager.getHowManySecondsAgoSawQuadRings()));
             telemetry.addData("Last saw Single ring   ", String.format("%3.2f seconds ago", visionManager.getHowManySecondsAgoSawSingleRing()));
+            telemetry.addData("Heading Comp ", String.format("%3.2f", heading_comp));
 
             visionManager.loop();
 
@@ -190,34 +209,34 @@ public class OpModeOfficialAuton extends LinearOpMode {
     }
 
     private void queueStandardFiringSequence() {
-            // Turn on shooter at 90% power
-            addInstruction(TURN_ON_SHOOTER, 1.0);
-            // Turn back to fire the rings into the top slot
-            addInstruction(TURN_TO, -3);
-            // Give time for the shooter to come up to speed
-            addInstruction(WAIT_FOR_TIME, 1000);
-            // FIRE and wait 2 seconds for the trigger to sweep
-            addInstruction(FIRE_RING);
-            // Turn on conveyor at 75% power
-            addInstruction(TURN_ON_CONVEYOR, 0.75);
-            // The first ring is right there
-            addInstruction(WAIT_FOR_TIME, 1500);
-            // FIRE and wait 2 seconds for the trigger to sweep
-            addInstruction(FIRE_RING);
-            // Wait three seconds
-            addInstruction(WAIT_FOR_TIME, 1600);
-            // FIRE and wait 2 seconds for the trigger to sweep up and back
-            addInstruction(FIRE_RING);
-            // Turn these off while we park
-            addInstruction(TURN_OFF_SHOOTER);
-            addInstruction(TURN_OFF_CONVEYOR);
+        addInstruction(DRIVE_DISTANCE, distance_std * MM_PER_FOOT, heading_comp, 0.75);
+        // Turn on shooter at 90% power
+        addInstruction(TURN_ON_SHOOTER, 1.0);
+        // Turn back to fire the rings into the top slot
+        addInstruction(TURN_TO, -3);
+        // Give time for the shooter to come up to speed
+        addInstruction(WAIT_FOR_TIME, 1000);
+        // FIRE and wait 2 seconds for the trigger to sweep
+        addInstruction(FIRE_RING);
+        // Turn on conveyor at 75% power
+        addInstruction(TURN_ON_CONVEYOR, 0.75);
+        // The first ring is right there
+        addInstruction(WAIT_FOR_TIME, 1500);
+        // FIRE and wait 2 seconds for the trigger to sweep
+        addInstruction(FIRE_RING);
+        // Wait three seconds
+        addInstruction(WAIT_FOR_TIME, 1600);
+        // FIRE and wait 2 seconds for the trigger to sweep up and back
+        addInstruction(FIRE_RING);
+        // Turn these off while we park
+        addInstruction(TURN_OFF_SHOOTER);
+        addInstruction(TURN_OFF_CONVEYOR);
     }
 
     // DRIVE_TO_A:
     private AutonState doDriveToA(long timesRun) {
         if (timesRun == 0) {
             // Drive for 5 ft forward at heading 0 degrees at 50% speed
-            addInstruction(DRIVE_DISTANCE, 4.9 * MM_PER_FOOT, 0, 0.75);
             queueStandardFiringSequence();
             addInstruction(TURN_TO, -60);
             addInstruction(DRIVE_DISTANCE, 0.6 * MM_PER_FOOT, 0, 0.5);
@@ -237,9 +256,6 @@ public class OpModeOfficialAuton extends LinearOpMode {
 
     private AutonState doDriveToB(long timesRun) {
         if (timesRun == 0) {
-            // Drive for 5 ft forward at heading 0 degrees at 50% speed
-            addInstruction(DRIVE_DISTANCE, 4.9 * MM_PER_FOOT, 0, 0.75);
-
             queueStandardFiringSequence();
 
             addInstruction(DRIVE_DISTANCE, 2 * MM_PER_FOOT, 0, 0.5);
@@ -260,9 +276,6 @@ public class OpModeOfficialAuton extends LinearOpMode {
 
     private AutonState doDriveToC(long timesRun) {
         if (timesRun == 0) {
-            // Drive for 5 ft forward at heading 0 degrees at 50% speed
-            addInstruction(DRIVE_DISTANCE, 4.9 * MM_PER_FOOT, 0, 0.75);
-
             queueStandardFiringSequence();
 
             addInstruction(DRIVE_DISTANCE, 3 * MM_PER_FOOT, 0, 0.6);
