@@ -13,7 +13,7 @@ import com.qualcomm.robotcore.util.Range;
 public class ActionWobbleArm {
     static final int LOWER_ARM_ENCODER_COUNTS_INCREMENT = 30;
     static final int RAISE_ARM_ENCODER_COUNTS_INCREMENT = 30;
-    static final double ARM_MOTOR_SPEED = 0.45;
+    static final double ARM_MOTOR_SPEED = 1.0;
     static final int MAX_ENCODER_COUNTS = 1500;
     static final int LOWER_WOBBLE_TIMEOUT = 5000;
     static final int RAISE_WOBBLE_TIMEOUT = 5000;

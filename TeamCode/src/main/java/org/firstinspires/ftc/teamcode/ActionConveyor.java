@@ -21,7 +21,7 @@ public class ActionConveyor {
     }
 
     public void turnOn() {
-        turnOnAtPower(0.5);
+        turnOnAtPower(1.0);
     }
 
     public void turnOff() {

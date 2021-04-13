@@ -69,13 +69,10 @@ public class OpModeOfficialAuton extends LinearOpMode {
         long timesRun = 0;
 
         String whichBot = UtilBotSettings.sharedInstance().getWhichBot();
-
+        
         if (whichBot == "10645") {
             heading_comp = HEADING_COMP_10645;
             distance_std = DISTANCE_STD_10645;
-        } else {
-            heading_comp = HEADING_COMP_10644;
-            distance_std = DISTANCE_STD_10644;
         }
 
         // Send telemetry message to signify robot waiting;

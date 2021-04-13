@@ -125,14 +125,15 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
             float backRight = leftY - leftX - gamepad1RightX;
             float backLeft = leftY + leftX + gamepad1RightX;
 
-            powerReducer = driveNominalPower;
+            powerReducer = 1.0f;
             if (gamepad1.right_trigger > 0) {
-                telemetry.addLine("Right trigger pressed");
                 powerReducer = 1.0f;
             }
             if (gamepad1.left_trigger > 0) {
-                telemetry.addLine("Left trigger pressed");
-                powerReducer = 0.1f;
+                powerReducer = 0.4f;
+            }
+            if (gamepad2.y) {
+                powerReducer = 0.4f;
             }
 
             // clip the right/left values so that the values never exceed +/- 1
