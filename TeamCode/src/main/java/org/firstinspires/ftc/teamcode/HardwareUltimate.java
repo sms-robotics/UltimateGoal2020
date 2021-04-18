@@ -30,17 +30,6 @@ public class HardwareUltimate
     private DcMotor arm = null;
     private TouchSensor touchUp = null;
     private TouchSensor touchDown = null;
-    
-    /* Manipulator */
-
-//    public DcMotor armShoulder = null;
-//    public DcMotor armGrab = null;
-//    public Servo servoCapStone = null;
-//    public Servo servoFound1 = null;
-//    public Servo servoFound2 = null;
-//    public Servo servoFound3 = null;
-//    public Servo servoArm1 = null;
-//    public Servo servoArm3 = null;
 
     /* Auton */
     public Servo sensorAxis = null;
@@ -56,30 +45,6 @@ public class HardwareUltimate
     /* Initialize standard Hardware interfaces */
     public void init(HardwareMap ahwMap, boolean Auton) {
         this.hardwareMap = ahwMap;
-
-        if (Auton == true) {
-            // Initialize the bot-specific distance sensor
-            try
-            {
-                sensorRange = ahwMap.get(DistanceSensor.class, "2m10644");
-                teamID = "10644";
-            }
-            catch (Exception p_exception) { };
-
-            try
-            {
-                sensorRange = ahwMap.get(DistanceSensor.class, "2m10645");
-                teamID = "10645";
-            }
-            catch (Exception p_exception) { };
-
-            // 2m Color Sensor Servo
-            try
-            {
-                sensorAxis = ahwMap.get(Servo.class, "2maxis");
-            }
-            catch (Exception p_exception) { };
-        }
 
         // Define and Initialize Motors
         try
@@ -208,6 +173,12 @@ public class HardwareUltimate
         ActionTrigger actionTrigger = new ActionTrigger(trigger);
         actionTrigger.initialize();
         return actionTrigger;
+    }
+
+    public SoundManager createAndInitializeSoundManager() {
+        SoundManager soundManager = new SoundManager(this.hardwareMap);
+        soundManager.initialize();
+        return soundManager;
     }
 }
 

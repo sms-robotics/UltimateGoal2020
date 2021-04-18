@@ -91,7 +91,7 @@ public class MovementBehaviors {
         if (motor == MOTOR.RL) {
             return 1.0 * power;
         }
-        
+
         return power;
     }
 
@@ -131,13 +131,13 @@ public class MovementBehaviors {
         double rearRightDriveAmount = (angleY + angleX);
         double rearLeftDriveAmount = (angleY - angleX);
 
-        double frontRightPower = motorPowerCompensator(MOTOR.FR, 
+        double frontRightPower = motorPowerCompensator(MOTOR.FR,
             clippedPower * frontRightDriveAmount);
-        double frontLeftPower = motorPowerCompensator(MOTOR.FL, 
+        double frontLeftPower = motorPowerCompensator(MOTOR.FL,
             clippedPower * frontLeftDriveAmount);
-        double rearRightPower = motorPowerCompensator(MOTOR.RR, 
+        double rearRightPower = motorPowerCompensator(MOTOR.RR,
             clippedPower * rearRightDriveAmount);
-        double rearLeftPower = motorPowerCompensator(MOTOR.RL, 
+        double rearLeftPower = motorPowerCompensator(MOTOR.RL,
             clippedPower * rearLeftDriveAmount);
 
         // If an extremely small power is set, the motor might indicate "busy" for a very long time, so don't do that.
@@ -155,6 +155,33 @@ public class MovementBehaviors {
             // telemetry.update();
             opMode.idle();
         }
+    }
+
+    public void driveInDirection(double headingInRadians, double angleToFaceInRadians, double power)
+    {
+        double clippedPower = Range.clip(power, MIN_DRIVE_POWER, MAX_DRIVE_POWER);
+
+        double leftX = -1 * Math.sin(headingInRadians);
+        double leftY = Math.cos(headingInRadians);
+        double rightX = -1 * Math.sin(angleToFaceInRadians);
+
+        // holonomic formulas
+        double frontRight = leftY + leftX - rightX;
+        double frontLeft = leftY - leftX + rightX;
+        double backRight = leftY - leftX - rightX;
+        double backLeft = leftY + leftX + rightX;
+
+        // clip the right/left values so that the values never exceed +/- 1
+        frontRight = Range.clip(frontRight, -1, 1) * clippedPower;
+        frontLeft = Range.clip(frontLeft, -1, 1) * clippedPower;
+        backLeft = Range.clip(backLeft, -1, 1) * clippedPower;
+        backRight = Range.clip(backRight, -1, 1) * clippedPower;
+
+        // write the values to the motors
+        robot.frontRightDrive.setPower(frontRight);
+        robot.frontLeftDrive.setPower(frontLeft);
+        robot.rearLeftDrive.setPower(backLeft);
+        robot.rearRightDrive.setPower(backRight);
     }
 
     public void controlledDriveAtHeading(double distanceMm, double heading, double power)
@@ -178,16 +205,16 @@ public class MovementBehaviors {
                 && elapsedTime.milliseconds() < clippedTimeoutInMs) {
 
             double headingError = getError(heading);
-            
+
             // Adjust based on angle of field
             double angleOfFieldInDegrees = sensorImu.getAngle();
             double angleOfFieldInRadians = Math.toRadians(angleOfFieldInDegrees);
-            
+
             double leftX = 0; //Math.sin(targetRadHeading);
             double leftY = 1;//-Math.cos(targetRadHeading);
 
             // float refAngle = (float)targetRadHeading;
-            
+
             // float leftX = (float) (gamepad1LeftX * Math.cos(refAngle) + gamepad1LeftY * Math.sin(refAngle));
             // float leftY = (float) (gamepad1LeftY * Math.cos(refAngle) - gamepad1LeftX * Math.sin(refAngle));
 
@@ -195,9 +222,6 @@ public class MovementBehaviors {
             double frontLeft = leftY - leftX;
             double backRight = leftY - leftX;
             double backLeft = leftY + leftX;
-            
-            RobotLog.i("FOO", String.format("frontRight: %f", frontRight));
-            RobotLog.i("FOO", String.format("frontLeft: %f", frontLeft));
 
             // clip the right/left values so that the values never exceed +/- 1
             frontRight = Range.clip(frontRight, -1, 1) * power/2;
@@ -235,7 +259,7 @@ public class MovementBehaviors {
 
             RobotLog.i(sensorImu.getPosition().toString());
         }
-        
+
         robot.frontRightDrive.setPower(0);
         robot.frontLeftDrive.setPower(0);
         robot.rearLeftDrive.setPower(0);

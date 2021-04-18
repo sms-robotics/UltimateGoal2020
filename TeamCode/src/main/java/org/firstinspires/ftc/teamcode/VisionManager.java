@@ -40,6 +40,9 @@ public class VisionManager {
     private final VisionNavigator navigator = new VisionNavigator();
     private final VisionRingCountGuesstimator ringCountGuesstimator = new VisionRingCountGuesstimator();
 
+    private boolean enableObjectDetection = true;
+    private boolean enableNavigation = true;
+
     public boolean initialize(HardwareMap hardwareMap) {
         cameraManager = ClassFactory.getInstance().getCameraManager();
         cameraName = hardwareMap.get(WebcamName.class, UtilBotSettings.sharedInstance().getWebcamName());
@@ -75,21 +78,28 @@ public class VisionManager {
     }
 
     public void loop() {
-        objectDetector.loop();
-        navigator.loop();
+        if (enableObjectDetection) {
+            objectDetector.loop();
+        }
 
-        try {
-            VuforiaLocalizer.CloseableFrame frame = vuforia.getFrameQueue().poll(10, TimeUnit.MILLISECONDS);
-            if (frame != null) {
-                Bitmap bitmap = vuforia.convertFrameToBitmap(frame);
+        if (enableNavigation) {
+            navigator.loop();
+        }
 
-                onNewBitmapAvailable(bitmap);
+        if (debugImageCaptureEnabled) {
+            try {
+                VuforiaLocalizer.CloseableFrame frame = vuforia.getFrameQueue().poll(10, TimeUnit.MILLISECONDS);
+                if (frame != null) {
+                    Bitmap bitmap = vuforia.convertFrameToBitmap(frame);
 
-                bitmap.recycle();
-                frame.close();
+                    onNewBitmapAvailable(bitmap);
+
+                    bitmap.recycle();
+                    frame.close();
+                }
+            } catch (Exception e) {
+                RobotLog.ee(TAG, e, "Error processing Vuforia frame");
             }
-        } catch (Exception e) {
-            RobotLog.ee(TAG, e, "Error processing Vuforia frame");
         }
     }
 
@@ -223,5 +233,25 @@ public class VisionManager {
 
     public double[] getLastComputedLocationFiltered() {
         return navigator.getLastComputedLocationFiltered();
+    }
+
+    public boolean isEnableObjectDetection() {
+        return enableObjectDetection;
+    }
+
+    public void setEnableObjectDetection(boolean enableObjectDetection) {
+        this.enableObjectDetection = enableObjectDetection;
+    }
+
+    public boolean isEnableNavigation() {
+        return enableNavigation;
+    }
+
+    public void setEnableNavigation(boolean enableNavigation) {
+        this.enableNavigation = enableNavigation;
+    }
+
+    public void setDebugImageCaptureEnabled(boolean debugImageCaptureEnabled) {
+        this.debugImageCaptureEnabled = debugImageCaptureEnabled;
     }
 }

@@ -23,6 +23,10 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
+import static org.firstinspires.ftc.teamcode.SoundManager.Sound.BAD;
+import static org.firstinspires.ftc.teamcode.SoundManager.Sound.COIN;
+import static org.firstinspires.ftc.teamcode.SoundManager.Sound.OK;
+
 /**
  * This file contains an minimal example of a Linear "OpMode". An OpMode is a 'program' that runs in either
  * the autonomous or the teleop period of an FTC match. The names of OpModes appear on the menu
@@ -61,11 +65,26 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
         ActionTrigger trigger = robot.createAndInitializeTrigger();
         ActionWobbleArm wobbleArm = robot.createAndInitializeWobbleArm(this);
         SensorIMU imu = robot.createAndInitializeIMU(this);
+        VisionWebcamScanner webcamScanner = robot.createAndInitializeWebcamScanner();
+
+        SoundManager soundManager = robot.createAndInitializeSoundManager();
+
+        MovementBehaviors movement = robot.createAndInitializeMovementBehaviors(this, conveyor, shooter, trigger, wobbleArm, imu);
+        VisionManager visionManager = robot.createAndInitializeVisionManager();
+
+        visionManager.setEnableObjectDetection(false);
+        visionManager.setDebugImageCaptureEnabled(false);
+        visionManager.activate();
+
+        webcamScanner.goToNeutral();
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
 
-        float powerReducer = 0.5f;
+        float targetPower = 0.5f;
+
+        soundManager.play(OK);
+
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
 
@@ -86,8 +105,12 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
         shooter.turnOff();
         conveyor.turnOff();
 
+//        movement.setStraightDrivingModes();
+
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
+            visionManager.loop();
+
             float gamepad1LeftY = gamepad1.left_stick_y;
             float gamepad1LeftX = gamepad1.left_stick_x;
             float gamepad1RightX = gamepad1.right_stick_x;
@@ -102,11 +125,11 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
             float leftX = -gamepad1LeftX;
             float leftY = -gamepad1LeftY;
 
-            boolean gpadACheck = gamepad1.a;
-            if (gpadACheck && (gpadACheck != previousA)) {
-                imuSteer = !imuSteer;
-            }
-            previousA = gpadACheck;
+//            boolean gpadACheck = gamepad1.a;
+//            if (gpadACheck && (gpadACheck != previousA)) {
+//                imuSteer = !imuSteer;
+//            }
+//            previousA = gpadACheck;
 
             boolean gpadYCheck = gamepad1.y;
             if (gpadYCheck && (gpadYCheck != previousY)) {
@@ -119,43 +142,94 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
                 leftY = gamepad1LeftYPrime;
             }
 
-            // holonomic formulas
-            float frontRight = leftY + leftX - gamepad1RightX;
-            float frontLeft = leftY - leftX + gamepad1RightX;
-            float backRight = leftY - leftX - gamepad1RightX;
-            float backLeft = leftY + leftX + gamepad1RightX;
-
-            powerReducer = 1.0f;
+            targetPower = 1.0f;
             if (gamepad1.right_trigger > 0) {
-                powerReducer = 1.0f;
+                targetPower = 0.6f;
             }
             if (gamepad1.left_trigger > 0) {
-                powerReducer = 0.4f;
+                targetPower = 0.4f;
             }
             if (gamepad2.y) {
-                powerReducer = 0.4f;
+                targetPower = 0.4f;
             }
 
-            // clip the right/left values so that the values never exceed +/- 1
-            frontRight = Range.clip(frontRight, -1, 1) * powerReducer;
-            frontLeft = Range.clip(frontLeft, -1, 1) * powerReducer;
-            backLeft = Range.clip(backLeft, -1, 1) * powerReducer;
-            backRight = Range.clip(backRight, -1, 1) * powerReducer;
+            // Have to keep track of whether the auto-move is doing the
+            // work or whether we're using the other joystick inputs
+            boolean handledMovement = false;
+            if (gamepad1.left_bumper) {
+                double[] desiredPosition = new double[] {/*X:*/1000.0, 0, /*Y:*/1000.0};
+                double[] lastComputedLocation = visionManager.getLastComputedLocationFiltered();
+                double lastSawTarget = visionManager.getHowManySecondsAgoSawBlueTarget();
+                if (lastComputedLocation != null && lastSawTarget < 1.0) {
+                    soundManager.play(COIN);
 
-            // write the values to the motors
+                    handledMovement = true;
 
-            robot.frontRightDrive.setPower(frontRight);
-            robot.frontLeftDrive.setPower(frontLeft);
-            robot.rearLeftDrive.setPower(backLeft);
-            robot.rearRightDrive.setPower(backRight);
+                    double deltaX = -1 * (lastComputedLocation[0] - desiredPosition[0]);
+                    double deltaY = (lastComputedLocation[2] - desiredPosition[2]);
+                    double deltaTheta = lastComputedLocation[3] - Math.toRadians(-27.0);
 
-            // Job #1: conveyor
-            // if (gamepad2.y){
-            //     conveyor.turnOff();
-            // }
-            // else if(gamepad2.x){
-            //     conveyor.turnOn();
-            // }
+                    double distanceToTravel = Math.sqrt(deltaX*deltaX + deltaY*deltaY);
+                    double angleToTravel = 0;
+                    String q = "?";
+
+                    if (deltaX > 0) {
+                        if (deltaY > 0) {
+                            q = "Q1";
+                            // Quadrant 1, need to move right and forward
+                            angleToTravel = Math.atan(deltaX / deltaY);
+                        } else {
+                            q = "Q2";
+                            // Quadrant 2, need to move right and back
+                            angleToTravel = Math.atan(-1 * deltaY / deltaX) + (Math.PI/2);
+                        }
+                    } else {
+                        if (deltaY > 0) {
+                            q = "Q4";
+                            // Quadrant 4, need to move left and forward
+                            angleToTravel = Math.atan(deltaY / (-1 * deltaX)) + (3 * Math.PI / 2);
+                        } else {
+                            q = "Q3";
+                            // Quadrant 3, need to move left and back
+                            angleToTravel = Math.atan((-1 * deltaX) / (-1 * deltaY)) + Math.PI;
+                        }
+                    }
+
+                    double angleToFace = deltaTheta;
+                    double seekPower = 0.8;
+                    double power = Range.clip(seekPower * Range.clip(distanceToTravel / 300, 0.05, seekPower), 0, seekPower);
+
+                    telemetry.addLine()
+                        .addData("DX", deltaX)
+                        .addData("DY", deltaY)
+                        .addData("Q", q);
+
+                    movement.driveInDirection(angleToTravel, angleToFace, power);
+                } else {
+                    // No lock on the target
+                    soundManager.play(BAD);
+                }
+            }
+
+            if (!handledMovement) {
+                // holonomic formulas
+                float frontRight = leftY + leftX - gamepad1RightX;
+                float frontLeft = leftY - leftX + gamepad1RightX;
+                float backRight = leftY - leftX - gamepad1RightX;
+                float backLeft = leftY + leftX + gamepad1RightX;
+
+                // clip the right/left values so that the values never exceed +/- 1
+                frontRight = Range.clip(frontRight, -1, 1) * targetPower;
+                frontLeft = Range.clip(frontLeft, -1, 1) * targetPower;
+                backLeft = Range.clip(backLeft, -1, 1) * targetPower;
+                backRight = Range.clip(backRight, -1, 1) * targetPower;
+
+                // write the values to the motors
+                robot.frontRightDrive.setPower(frontRight);
+                robot.frontLeftDrive.setPower(frontLeft);
+                robot.rearLeftDrive.setPower(backLeft);
+                robot.rearRightDrive.setPower(backRight);
+            }
 
             // Job #2: ARM
             if (gamepad2.dpad_up){
@@ -178,12 +252,6 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
             } else {
                 conveyor.turnOff();
             }
-
-            // if (gamepad2.right_trigger > 0.10) {
-            //     shooter.turnOn();
-            // } else {
-            //     shooter.turnOff();
-            // }
 
             // Job #2: ARM
             boolean dpad_check;
@@ -208,18 +276,25 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
 
             trigger.loop();
 
-            //print out motor values
-            telemetry.addLine()
-                .addData("front right", frontRight)
-                .addData("front left", frontLeft)
-                .addData("back left", backLeft)
-                .addData("back right", backRight);
+//            telemetry.addLine()
+//                .addData("X", leftX)
+//                .addData("Y", leftY);
 
             telemetry.addData("Shooter Speed", "%.03f", shooter.getSpeed());
             telemetry.addData("Angle", "%.03f", angleOfFieldInDegrees);
-            telemetry.addData("Mode", imuSteer ? "IMU" : "Normal");
+//            telemetry.addData("Mode", imuSteer ? "IMU" : "Normal");
+            double[] lastComputedLocation = visionManager.getLastComputedLocationFiltered();
+            if (lastComputedLocation == null) {
+                telemetry.addData("Position                        ", "Unknown");
+            } else {
+                telemetry.addData("Position X                      ", String.format("%.1f", lastComputedLocation[0]));
+                telemetry.addData("Position Y                      ", String.format("%.1f", lastComputedLocation[2]));
+                telemetry.addData("Position A                      ", String.format("%.1f", Math.toDegrees(lastComputedLocation[3])));
+            }
 
             telemetry.update();
         }
+
+        visionManager.shutdown();
     }
 }

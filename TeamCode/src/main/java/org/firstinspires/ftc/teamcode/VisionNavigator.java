@@ -58,9 +58,10 @@ public class VisionNavigator {
     private static final float mmBotWidth       = 18 * mmPerInch;            // ... or whatever is right for your robot
     private static final float mmFTCFieldWidth  = (12*8 - 2) * mmPerInch;   // the FTC field is ~11'10" center-to-center of the glass panels
     private static final float mmFTCFieldHeight  = (12*12 - 2) * mmPerInch;   // the FTC field is ~11'10" center-to-center of the glass panels
-    private static final UtilLowPassFilter lpfX = new UtilLowPassFilter(500);
-    private static final UtilLowPassFilter lpfY = new UtilLowPassFilter(500);
-    private static final UtilLowPassFilter lpfZ = new UtilLowPassFilter(500);
+    private static final UtilLowPassFilter lpfTheta = new UtilLowPassFilter(350);
+    private static final UtilLowPassFilter lpfX = new UtilLowPassFilter(350);
+    private static final UtilLowPassFilter lpfY = new UtilLowPassFilter(350);
+    private static final UtilLowPassFilter lpfZ = new UtilLowPassFilter(350);
 
     private VuforiaTrackables vuforiaUltimateGoalTrackables;
     private List<VuforiaTrackable> trackables;
@@ -90,8 +91,6 @@ public class VisionNavigator {
         trackables = new ArrayList<VuforiaTrackable>();
         trackables.add(blueTarget);
         trackables.add(blueAlliance);
-
-//        trackables.addAll(vuforiaUltimateGoalTrackables);
 
         for (VuforiaTrackable trackable : trackables) {
             trackableMap.put(trackable.getName(), trackable);
@@ -184,7 +183,7 @@ public class VisionNavigator {
          * plane) is then CCW, as one would normally expect from the usual classic 2D geometry.
          */
         OpenGLMatrix phoneLocationOnRobot = OpenGLMatrix
-            .translation(0, 0,0)
+            .translation(3 * mmPerInch, 0,0)
             .multiplied(Orientation.getRotationMatrix(
                 AxesReference.EXTRINSIC, AxesOrder.YZY,
                 AngleUnit.DEGREES, 0, 0, 0));
@@ -238,12 +237,15 @@ public class VisionNavigator {
                 lastComputedLocationTimestamp = System.currentTimeMillis();
 
                 VectorF translation = lastComputedLocation.getTranslation();
+                float[] data = lastComputedLocation.getData();
 
                 float[] locationData = translation.getData();
                 float x = locationData[0];
                 float y = locationData[1];
                 float z = locationData[2];
+                float theta = data[9];
 
+                lpfTheta.addSample(theta, lastComputedLocationTimestamp);
                 lpfX.addSample(x, lastComputedLocationTimestamp);
                 lpfY.addSample(y, lastComputedLocationTimestamp);
                 lpfZ.addSample(z, lastComputedLocationTimestamp);
@@ -277,7 +279,8 @@ public class VisionNavigator {
         return new double[] {
             lpfX.getValue(),
             lpfY.getValue(),
-            lpfZ.getValue()
+            lpfZ.getValue(),
+            lpfTheta.getValue()
         };
     }
 }
