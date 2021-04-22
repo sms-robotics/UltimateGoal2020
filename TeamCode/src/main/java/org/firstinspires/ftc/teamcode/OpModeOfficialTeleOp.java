@@ -26,6 +26,7 @@ import com.qualcomm.robotcore.util.Range;
 import static org.firstinspires.ftc.teamcode.SoundManager.Sound.BAD;
 import static org.firstinspires.ftc.teamcode.SoundManager.Sound.COIN;
 import static org.firstinspires.ftc.teamcode.SoundManager.Sound.OK;
+import static org.firstinspires.ftc.teamcode.UtilMovement.normalizeSpeedsForMinMaxValues;
 
 /**
  * This file contains an minimal example of a Linear "OpMode". An OpMode is a 'program' that runs in either
@@ -146,9 +147,11 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
             if (gamepad1.right_trigger > 0) {
                 targetPower = 0.6f;
             }
+
             if (gamepad1.left_trigger > 0) {
                 targetPower = 0.4f;
             }
+
             if (gamepad2.y) {
                 targetPower = 0.4f;
             }
@@ -157,7 +160,7 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
             // work or whether we're using the other joystick inputs
             boolean handledMovement = false;
             if (gamepad1.left_bumper) {
-                double[] desiredPosition = new double[] {/*X:*/1000.0, 0, /*Y:*/1000.0};
+                double[] desiredPosition = new double[] {/*X:*/1050.0, 0, /*Y:*/1540.0};
                 double[] lastComputedLocation = visionManager.getLastComputedLocationFiltered();
                 double lastSawTarget = visionManager.getHowManySecondsAgoSawBlueTarget();
                 if (lastComputedLocation != null && lastSawTarget < 1.0) {
@@ -167,7 +170,7 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
 
                     double deltaX = -1 * (lastComputedLocation[0] - desiredPosition[0]);
                     double deltaY = (lastComputedLocation[2] - desiredPosition[2]);
-                    double deltaTheta = lastComputedLocation[3] - Math.toRadians(-27.0);
+                    double deltaTheta = lastComputedLocation[3] - Math.toRadians(90.0);
 
                     double distanceToTravel = Math.sqrt(deltaX*deltaX + deltaY*deltaY);
                     double angleToTravel = 0;
@@ -196,15 +199,16 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
                     }
 
                     double angleToFace = deltaTheta;
-                    double seekPower = 0.8;
-                    double power = Range.clip(seekPower * Range.clip(distanceToTravel / 300, 0.05, seekPower), 0, seekPower);
+                    double seekPower = 0.6;
+                    double drivePower = Range.clip(seekPower * Range.clip(distanceToTravel / 400, 0.01, seekPower), 0, seekPower);
+                    double turnPower = Range.clip(seekPower * Range.clip(deltaTheta, 0.05, seekPower), 0, seekPower);
 
                     telemetry.addLine()
                         .addData("DX", deltaX)
                         .addData("DY", deltaY)
-                        .addData("Q", q);
+                        .addData("A", angleToFace);
 
-                    movement.driveInDirection(angleToTravel, angleToFace, power);
+                    movement.driveInDirection(angleToTravel, angleToFace, drivePower, turnPower);
                 } else {
                     // No lock on the target
                     soundManager.play(BAD);
@@ -218,17 +222,19 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
                 float backRight = leftY - leftX - gamepad1RightX;
                 float backLeft = leftY + leftX + gamepad1RightX;
 
-                // clip the right/left values so that the values never exceed +/- 1
-                frontRight = Range.clip(frontRight, -1, 1) * targetPower;
-                frontLeft = Range.clip(frontLeft, -1, 1) * targetPower;
-                backLeft = Range.clip(backLeft, -1, 1) * targetPower;
-                backRight = Range.clip(backRight, -1, 1) * targetPower;
+                double[] normalizedSpeeds = normalizeSpeedsForMinMaxValues(
+                    frontLeft,
+                    frontRight,
+                    backLeft,
+                    backRight,
+                    -1.0, 1.0,
+                    targetPower);
 
                 // write the values to the motors
-                robot.frontRightDrive.setPower(frontRight);
-                robot.frontLeftDrive.setPower(frontLeft);
-                robot.rearLeftDrive.setPower(backLeft);
-                robot.rearRightDrive.setPower(backRight);
+                robot.frontLeftDrive.setPower(normalizedSpeeds[0]);
+                robot.frontRightDrive.setPower(normalizedSpeeds[1]);
+                robot.rearLeftDrive.setPower(normalizedSpeeds[2]);
+                robot.rearRightDrive.setPower(normalizedSpeeds[3]);
             }
 
             // Job #2: ARM

@@ -142,6 +142,13 @@ public class HardwareUltimate
 
     public MovementBehaviors createAndInitializeMovementBehaviors(LinearOpMode opMode, ActionConveyor conveyor, ActionShooter shooter, ActionTrigger trigger, ActionWobbleArm wobbleArm, SensorIMU sensorIMU) {
         MovementBehaviors movementBehaviors = new MovementBehaviors(opMode, this, conveyor, shooter, trigger, wobbleArm, sensorIMU);
+
+        // Initialize the PID Calculators
+        movementBehaviors.initializeXPIDCalculator(0.0025, 0.0, 0.0, false);
+        movementBehaviors.initializeYPIDCalculator(0.0025, 0.0, 0.0,false);
+        movementBehaviors.initializeZPIDCalculator(0.015, 0.000, 0.0,false);
+        movementBehaviors.initializeTurnPIDCalculator(0.0075, 0.000, 0.0,false);
+
         return movementBehaviors;
     }
 

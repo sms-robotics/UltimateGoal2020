@@ -10,7 +10,16 @@ import com.qualcomm.robotcore.util.RobotLog;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
+import static org.firstinspires.ftc.teamcode.UtilMovement.inchesToTicksForQuadStraightDrive;
+import static org.firstinspires.ftc.teamcode.UtilMovement.normalizeSpeedsForMinMaxValues;
+
 public class MovementBehaviors {
+    static final double HEADING_THRESHOLD = 2;
+    static final double DISTANCE_THRESHOLD = 50;
+    static final double SETTLING_TIME = 0.1;
+
+    static final int GYRO = 1;
+    static final int ENCODERS = 2;
 
     private static final double TURN_TICKS_PER_DEGREE = 14.5;
     private static final double TICKS_PER_MILLIMETER = 3.0;
@@ -31,6 +40,13 @@ public class MovementBehaviors {
     private final ActionTrigger trigger;
     private final ActionWobbleArm wobbleArm;
     private final SensorIMU sensorImu;
+
+    private ElapsedTime settlingtime = new ElapsedTime();
+    boolean settlingtimeInitiated = false;
+    private NerdPIDCalculator xPIDCalculator;
+    private NerdPIDCalculator yPIDCalculator;
+    private NerdPIDCalculator zPIDCalculator;
+    private NerdPIDCalculator turnPIDCalculator;
 
     private enum MOTOR {
         FR,
@@ -157,31 +173,151 @@ public class MovementBehaviors {
         }
     }
 
-    public void driveInDirection(double headingInRadians, double angleToFaceInRadians, double power)
+    public void driveInDirection(double headingInRadians, double angleToFaceInRadians, double power, double turnPower)
     {
         double clippedPower = Range.clip(power, MIN_DRIVE_POWER, MAX_DRIVE_POWER);
 
         double leftX = -1 * Math.sin(headingInRadians);
         double leftY = Math.cos(headingInRadians);
-        double rightX = -1 * Math.sin(angleToFaceInRadians);
+        double rightX = angleToFaceInRadians * 50;
+
+        double driveFactor = (power) / (power + turnPower);
+        double turnFactor = 1 - driveFactor;
+        double targetPower = Math.max(power, turnPower);
 
         // holonomic formulas
-        double frontRight = leftY + leftX - rightX;
-        double frontLeft = leftY - leftX + rightX;
-        double backRight = leftY - leftX - rightX;
-        double backLeft = leftY + leftX + rightX;
+        double frontRight = ((leftY + leftX) * driveFactor) - (rightX * turnFactor);
+        double frontLeft = ((leftY - leftX) * driveFactor) + (rightX * turnFactor);
+        double backRight = ((leftY - leftX) * driveFactor) - (rightX * turnFactor);
+        double backLeft = ((leftY + leftX) * driveFactor) + (rightX * turnFactor);
 
-        // clip the right/left values so that the values never exceed +/- 1
-        frontRight = Range.clip(frontRight, -1, 1) * clippedPower;
-        frontLeft = Range.clip(frontLeft, -1, 1) * clippedPower;
-        backLeft = Range.clip(backLeft, -1, 1) * clippedPower;
-        backRight = Range.clip(backRight, -1, 1) * clippedPower;
+        double[] normalizedSpeeds = normalizeSpeedsForMinMaxValues(
+            frontLeft,
+            frontRight,
+            backLeft,
+            backRight,
+            -1.0, 1.0,
+            targetPower);
+
+        // frontRight -= rightX;
+        // frontLeft += rightX;
+        // backRight -= rightX;
+        // backLeft += rightX;
+
+        // normalizedSpeeds = normalizeSpeedsForMinMaxValues(
+        //     frontLeft,
+        //     frontRight,
+        //     backLeft,
+        //     backRight,
+        //     -1.0, 1.0,
+        //     targetPower);
 
         // write the values to the motors
-        robot.frontRightDrive.setPower(frontRight);
-        robot.frontLeftDrive.setPower(frontLeft);
-        robot.rearLeftDrive.setPower(backLeft);
-        robot.rearRightDrive.setPower(backRight);
+        robot.frontLeftDrive.setPower(normalizedSpeeds[0]);
+        robot.frontRightDrive.setPower(normalizedSpeeds[1]);
+        robot.rearLeftDrive.setPower(normalizedSpeeds[2]);
+        robot.rearRightDrive.setPower(normalizedSpeeds[3]);
+
+//        // clip the right/left values so that the values never exceed +/- 1
+//        frontRight = Range.clip(frontRight, -1, 1) * clippedPower;
+//        frontLeft = Range.clip(frontLeft, -1, 1) * clippedPower;
+//        backLeft = Range.clip(backLeft, -1, 1) * clippedPower;
+//        backRight = Range.clip(backRight, -1, 1) * clippedPower;
+//
+//        // write the values to the motors
+//        robot.frontRightDrive.setPower(frontRight);
+//        robot.frontLeftDrive.setPower(frontLeft);
+//        robot.rearLeftDrive.setPower(backLeft);
+//        robot.rearRightDrive.setPower(backRight);
+    }
+
+    public void motorsResetAndRunUsingEncoders(){
+        robot.frontLeftDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        robot.frontRightDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        robot.rearLeftDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        robot.rearRightDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        robot.frontLeftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        robot.frontRightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        robot.rearLeftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        robot.rearRightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+    }
+
+    /** Function to drive robot based on PIDs in X, Y and Z directions.
+     *     *
+     * @param   xDistance           - Distance to move in X direction.
+     * @param   yDistance           - Distance to move in Y direction.
+     * @param   zAngleToMaintain    - Angle to maintain.
+     *
+     */
+    public void nerdPidDrive(double xDistance, double yDistance, double zAngleToMaintain, double targetPower, double timeOut) {
+        final String funcName = "nerdPidDrive";
+
+        //Speeds for assigning to 4 motors.
+
+        double frontLeftSpeed;
+        double frontRightSpeed;
+        double rearLeftSpeed;
+        double rearRightSpeed;
+
+        //To hold the motor encoder ticks in each direction.
+
+        int xTicks,yTicks;
+
+        // Hold the PID values for X,Y and Z.
+        double zpid, xpid, ypid;
+
+        // Holds final motor powers to be sent to motors.
+        double [] motorPowers;
+
+        // Reset the timer
+        runtime.reset();
+
+        // Reset the Calculators
+        xPIDCalculator.reset();
+        yPIDCalculator.reset();
+        zPIDCalculator.reset();
+
+        // Reset the motors so that the encoders are set to 0.
+        motorsResetAndRunUsingEncoders();
+
+        // Convert X and Y distances to corresponding encoder ticks.
+        xTicks = xDistance != 0.0 ? (int)inchesToTicksForQuadStraightDrive(xDistance): 0;
+        yTicks = yDistance != 0.0 ? (int)inchesToTicksForQuadStraightDrive(yDistance): 0;
+
+        // Set PID targets for X, Y and Z
+        xPIDCalculator.setTarget(xTicks, findXDisplacement());
+        yPIDCalculator.setTarget(yTicks, findYDisplacement());
+        zPIDCalculator.setTarget(zAngleToMaintain, getZAngleValue());
+
+        // Perform PID Loop until we reach the targets
+        while (this.opMode.opModeIsActive() && !distanceTargetReached(xTicks, yTicks) && runtime.seconds() <= timeOut) {
+            //Feed the input device readings to corresponding PID calculators:
+            zpid = zPIDCalculator.getOutput(getZAngleValue(), GYRO);
+            xpid = xPIDCalculator.getOutput(findXDisplacement(), ENCODERS);
+            ypid = yPIDCalculator.getOutput(findYDisplacement(), ENCODERS);
+
+            // Calculate Speeds based on Inverse Kinematics
+
+            frontLeftSpeed = ypid - zpid + xpid;
+            frontRightSpeed = ypid + zpid - xpid;
+            rearLeftSpeed = ypid - zpid - xpid;
+            rearRightSpeed = ypid + zpid + xpid;
+
+            // Normalize the Motor Speeds for Min and Max Values
+            motorPowers = normalizeSpeedsForMinMaxValues(frontLeftSpeed, frontRightSpeed, rearLeftSpeed, rearRightSpeed, 0.0, 1, targetPower);
+
+            // Set Powers to corresponding Motors
+            robot.frontLeftDrive.setPower(motorPowers[0]);
+            robot.frontRightDrive.setPower(motorPowers[1]);
+            robot.rearLeftDrive.setPower(motorPowers[2]);
+            robot.rearRightDrive.setPower(motorPowers[3]);
+        }
+
+        //Brake once the PID loop is complete
+        RobotLog.d("NerdBOT  - Displacement Before Stop : %s|xTarget | yTarget | xDisplacement | yDisplacement ", funcName);
+        RobotLog.d("NerdBOT  - Displacement Before Stop : %s|%d|%d|%f|%f ", funcName, xTicks, yTicks, findXDisplacement(), findYDisplacement());
+        stopWheels();
     }
 
     public void controlledDriveAtHeading(double distanceMm, double heading, double power)
@@ -201,8 +337,8 @@ public class MovementBehaviors {
         sensorImu.startAccelerationIntegration();
 
         while (true
-                && !opMode.isStopRequested()
-                && elapsedTime.milliseconds() < clippedTimeoutInMs) {
+            && !opMode.isStopRequested()
+            && elapsedTime.milliseconds() < clippedTimeoutInMs) {
 
             double headingError = getError(heading);
 
@@ -290,31 +426,52 @@ public class MovementBehaviors {
         robot.rearLeftDrive.setPower(0.0);
     }
 
-    public void turn(double degrees) {
-        int targetPosition = (int)(degrees * TURN_TICKS_PER_DEGREE);
-        int frontRightTarget = robot.frontRightDrive.getCurrentPosition() - (int)(targetPosition);
-        int frontLeftTarget = robot.frontLeftDrive.getCurrentPosition() + (int)(targetPosition);
-        int rearRightTarget = robot.rearRightDrive.getCurrentPosition() - (int)(targetPosition);
-        int rearLeftTarget = robot.rearLeftDrive.getCurrentPosition() + (int)(targetPosition);
+    public void motorsSetMode(DcMotor.RunMode runMode){
+        robot.frontLeftDrive.setMode(runMode);
+        robot.frontRightDrive.setMode(runMode);
+        robot.rearLeftDrive.setMode(runMode);
+        robot.rearRightDrive.setMode(runMode);
+    }
 
-        robot.frontRightDrive.setTargetPosition(frontRightTarget);
-        robot.frontLeftDrive.setTargetPosition(frontLeftTarget);
-        robot.rearRightDrive.setTargetPosition(rearRightTarget);
-        robot.rearLeftDrive.setTargetPosition(rearLeftTarget);
+    public void nerdPidTurn(double targetAngle) {
+        double pidvalue;
+        double [] motorPowers;
 
+        double frontLeftSpeed=0, frontRightSpeed=0, rearRightSpeed=0, rearLeftSpeed=0;
 
-        // TODO: Ease into movement instead of going directly to max power.
-        robot.frontRightDrive.setPower(TURN_POWER);
-        robot.frontLeftDrive.setPower(TURN_POWER);
-        robot.rearRightDrive.setPower(TURN_POWER);
-        robot.rearLeftDrive.setPower(TURN_POWER);
+        runtime.reset();
 
-        while (opMode.opModeIsActive() && (robot.frontRightDrive.isBusy() || robot.frontLeftDrive.isBusy() || robot.rearRightDrive.isBusy() || robot.rearLeftDrive.isBusy() )) {
-            // Update telemetry & Allow time for other processes to run
-            telemetry.update();
-            // opMode.idle();
-            Thread.yield();
+        turnPIDCalculator.setTarget(targetAngle, getZAngleValue());
+
+        motorsSetMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        while (!opMode.isStopRequested() && runtime.milliseconds() <= TURN_TIMEOUT_IN_MS) {
+            double angle = getZAngleValue();
+
+            pidvalue = turnPIDCalculator.getOutput(angle, GYRO);
+
+            frontLeftSpeed =  -pidvalue;
+            frontRightSpeed = pidvalue;
+            rearLeftSpeed = -pidvalue;
+            rearRightSpeed = pidvalue;
+
+            double targetTurnPower = 0.1;//Math.abs(angle - targetAngle) / 90.0;
+
+            motorPowers = normalizeSpeedsForMinMaxValues(
+                frontLeftSpeed,
+                frontRightSpeed,
+                rearLeftSpeed,
+                rearRightSpeed,
+                MIN_TURN_POWER, MAX_TURN_POWER, // XXX
+                targetTurnPower);
+
+            robot.frontLeftDrive.setPower(motorPowers[0]);
+            robot.frontRightDrive.setPower(motorPowers[1]);
+            robot.rearLeftDrive.setPower(motorPowers[2]);
+            robot.rearRightDrive.setPower(motorPowers[3]);
         }
+
+        stopWheels();
     }
 
     public void startTurningLeft(double power) {
@@ -408,6 +565,101 @@ public class MovementBehaviors {
         robot.rearLeftDrive.setDirection(DcMotorSimple.Direction.REVERSE);
     }
 
+    //Function to find out the Robot travel distance in X direction.
+    double findXDisplacement() {
+        return (robot.frontLeftDrive.getCurrentPosition() - robot.frontRightDrive.getCurrentPosition()
+            -robot.rearLeftDrive.getCurrentPosition() + robot.rearRightDrive.getCurrentPosition())/4.0;
+    }
+
+    //Function to find out the Robot travel distance in Y direction.
+    double findYDisplacement() {
+        return (robot.frontLeftDrive.getCurrentPosition() + robot.frontRightDrive.getCurrentPosition()
+            + robot.rearLeftDrive.getCurrentPosition() + robot.rearRightDrive.getCurrentPosition())/4.0;
+    }
+
+
+    public void initializeZPIDCalculator(double kP, double kI, double kD, boolean debugFlag){
+
+        this.zPIDCalculator = new NerdPIDCalculator("zPIDCalculator", kP, kI, kD);
+        this.zPIDCalculator.setDebug(debugFlag);
+    }
+
+    public void initializeXPIDCalculator(double kP, double kI, double kD,boolean debugFlag){
+
+        this.xPIDCalculator = new NerdPIDCalculator("xPIDCalculator", kP, kI, kD);
+        this.xPIDCalculator.setDebug(debugFlag);
+    }
+    public void initializeYPIDCalculator(double kP, double kI, double kD,boolean debugFlag){
+
+        this.yPIDCalculator = new NerdPIDCalculator("yPIDCalculator", kP, kI, kD);
+        this.yPIDCalculator.setDebug(debugFlag);
+    }
+
+    public void initializeTurnPIDCalculator(double kP, double kI, double kD,boolean debugFlag){
+
+        this.turnPIDCalculator = new NerdPIDCalculator("turnPIDCalculator", kP, kI, kD);
+        this.turnPIDCalculator.setDebug(debugFlag);
+
+    }
+
+    //Function to find if the robot reached the desired target distance.
+    //If desired distance is reached, it also checks if it is withing z angle tolerance.
+
+    boolean distanceTargetReached( int xTicks, int yTicks){
+
+        boolean onDistanceTarget = false;
+        boolean onFinalTarget = false;
+        if(xTicks == 0 && yTicks != 0){
+            if(Math.abs(yTicks) - Math.abs(findYDisplacement()) <= DISTANCE_THRESHOLD){
+
+                onDistanceTarget = true;
+
+            }
+        }else if(yTicks == 0 && xTicks != 0 ){
+            if(Math.abs(xTicks) - Math.abs(findXDisplacement()) <= DISTANCE_THRESHOLD){
+
+                onDistanceTarget = true;
+            }
+
+        }else{
+            if((Math.abs(yTicks) - Math.abs(findYDisplacement()) <= DISTANCE_THRESHOLD) && (Math.abs(xTicks) - Math.abs(findXDisplacement()) <= DISTANCE_THRESHOLD)){
+
+                onDistanceTarget = true;
+            }
+
+        }
+        if(onFinalTarget == false) {
+            onFinalTarget = onDistanceTarget;
+        }
+
+        if((onFinalTarget) && !settlingtimeInitiated)  {
+            settlingtime.reset();
+            settlingtimeInitiated = true;
+        }
+
+//        if (onFinalTarget && !timerStarted){
+//            settlingtime.reset();
+//            timerStarted = true;
+//        }
+//
+//        if (onFinalTarget && !(settlingtime.seconds() < 0.2))
+//              return  onFinalTarget;
+//        else
+//            return false;
+
+        if(onFinalTarget){
+            if(settlingtime.seconds() < SETTLING_TIME){
+                return false;
+            }
+            else{
+                return true;
+            }
+        }
+        else {
+            return onFinalTarget;
+        }
+    }
+
     public void waitForTimeInMilliseconds(double millisecondsToWait) {
         double msRunTime = runtime.milliseconds() + millisecondsToWait;
 
@@ -417,7 +669,15 @@ public class MovementBehaviors {
         }
     }
 
-    public void turnOnCoveyor(double parameter) {
+    public double getZAngleValue() {
+        return sensorImu.getAngle();
+    }
+
+    public void resetAngle() {
+        sensorImu.resetAngle();
+    }
+
+    public void turnOnConveyor(double parameter) {
         conveyor.turnOnAtPower(parameter);
     }
 

@@ -35,7 +35,7 @@ public class MovementInstruction {
         TURN_ON_CONVEYOR(new Action() {
             @Override
             public void execute(MovementBehaviors behaviors, double... parameters) {
-                behaviors.turnOnCoveyor(parameters[0]);
+                behaviors.turnOnConveyor(parameters[0]);
             }
         }),
 
@@ -83,7 +83,8 @@ public class MovementInstruction {
 
                     // distance and angle and power
                     case 3:
-                        behaviors.driveDistance(parameters[0], parameters[1], parameters[2]);
+                        behaviors.nerdPidDrive(0, parameters[0], parameters[1], parameters[2], 10);
+//                        behaviors.driveDistance(parameters[0], parameters[1], parameters[2]);
                         break;
 
                     default:
@@ -95,7 +96,8 @@ public class MovementInstruction {
         TURN_TO(new Action() {
             @Override
             public void execute(MovementBehaviors behaviors, double... parameters) {
-                behaviors.turnTo(parameters[0]);
+                behaviors.nerdPidTurn(parameters[0]);
+//                behaviors.turnTo(parameters[0]);
             }
         }),
 

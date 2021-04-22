@@ -58,10 +58,10 @@ public class VisionNavigator {
     private static final float mmBotWidth       = 18 * mmPerInch;            // ... or whatever is right for your robot
     private static final float mmFTCFieldWidth  = (12*8 - 2) * mmPerInch;   // the FTC field is ~11'10" center-to-center of the glass panels
     private static final float mmFTCFieldHeight  = (12*12 - 2) * mmPerInch;   // the FTC field is ~11'10" center-to-center of the glass panels
-    private static final UtilLowPassFilter lpfTheta = new UtilLowPassFilter(350);
-    private static final UtilLowPassFilter lpfX = new UtilLowPassFilter(350);
-    private static final UtilLowPassFilter lpfY = new UtilLowPassFilter(350);
-    private static final UtilLowPassFilter lpfZ = new UtilLowPassFilter(350);
+    private static final UtilLowPassFilter lpfTheta = new UtilLowPassFilter(100);
+    private static final UtilLowPassFilter lpfX = new UtilLowPassFilter(100);
+    private static final UtilLowPassFilter lpfY = new UtilLowPassFilter(100);
+    private static final UtilLowPassFilter lpfZ = new UtilLowPassFilter(100);
 
     private VuforiaTrackables vuforiaUltimateGoalTrackables;
     private List<VuforiaTrackable> trackables;
@@ -243,7 +243,9 @@ public class VisionNavigator {
                 float x = locationData[0];
                 float y = locationData[1];
                 float z = locationData[2];
-                float theta = data[9];
+                // XXX: 4/5
+                // heading = Math.Atan2(robotLocationArray[5], robotLocationArray[4]) * 180.0/Math.PI;
+                float theta = (float)Math.atan2(data[5], data[4]);
 
                 lpfTheta.addSample(theta, lastComputedLocationTimestamp);
                 lpfX.addSample(x, lastComputedLocationTimestamp);
