@@ -7,9 +7,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 
 /**
@@ -73,6 +75,7 @@ public class UtilBotStorage {
             this.jsonObject.put(name, value);
             String dateName = getKeyNameForDateSet(name);
             this.jsonObject.put(dateName, System.currentTimeMillis());
+            store();
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -103,6 +106,7 @@ public class UtilBotStorage {
 
         if (!(dataFile.exists() && dataFile.canRead())) {
             RobotLog.e("Either the data file %s does not exist or could not be read.", dataFile);
+            this.jsonObject = new JSONObject();
             return false;
         }
 
@@ -139,6 +143,47 @@ public class UtilBotStorage {
                     fileReader.close();
                 } catch (IOException e) {
                     RobotLog.ee(TAG, e, "An error occurred when trying to close our settings .json.");
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private boolean store() {
+        File dataFile = new File(dataDirectory, dataFileName);
+        RobotLog.d("Attempting to save data to %s", dataFile);
+
+//        if (!dataFile.canWrite()) {
+//            RobotLog.e("Data file cannot be written.", dataFile);
+//            return false;
+//        }
+//
+        RobotLog.d("Saving data to %s", dataFile);
+        FileWriter fileWriter = null;
+        try {
+            fileWriter = new FileWriter(dataFile);
+            BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+
+            String s = this.jsonObject.toString();
+            bufferedWriter.write(s);
+
+            bufferedWriter.close();
+
+            return true;
+        } catch (FileNotFoundException e) {
+            RobotLog.ee(TAG, e, "Our settings file wasn't found, which is odd because we should have explicitly checked for it.");
+            e.printStackTrace();
+        } catch (IOException e) {
+            RobotLog.ee(TAG, e, "An error occurred when reading our settings file. Perhaps it is corrupt?");
+            e.printStackTrace();
+        } finally {
+            if (fileWriter != null) {
+                try {
+                    fileWriter.close();
+                } catch (IOException e) {
+                    RobotLog.ee(TAG, e, "An error occurred when trying to close our data .json.");
                     e.printStackTrace();
                 }
             }

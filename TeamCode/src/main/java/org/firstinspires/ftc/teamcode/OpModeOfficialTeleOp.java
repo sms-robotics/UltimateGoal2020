@@ -102,7 +102,7 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
         runtime.reset();
 
         if (lastGyroAngle.isValid() && lastGyroAngle.secondsSinceSaved() < (2.5 * 60)) {
-            imu.resetAngleTo((Long)lastGyroAngle.value);
+            imu.resetAngleTo((double)lastGyroAngle.value);
         } else {
             imu.resetAngle();
         }

@@ -124,7 +124,10 @@ public class OpModeOfficialAuton extends LinearOpMode {
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
+            float angleOfFieldInDegrees = (float) sensorImu.getAngle();
+
             telemetry.addData("Bot     ", whichBot);
+            telemetry.addData("Angle", "%.03f", angleOfFieldInDegrees);
             telemetry.addData("Our State     ", state.name());
             telemetry.addData("Time          ", String.format("%3.2f seconds", runtime.seconds()));
             telemetry.addData("#Instructions ", movementThread.getHowManyInstructions());
@@ -224,11 +227,11 @@ public class OpModeOfficialAuton extends LinearOpMode {
     }
 
     private void queueStandardFiringSequence() {
-        addInstruction(DRIVE_PID_DISTANCE, distance_std * MM_PER_FOOT, heading_comp, 0.75);
+        addInstruction(DRIVE_PID_DISTANCE, 0, distance_std * MM_PER_FOOT, heading_comp, 0.75);
 //        // Turn on shooter at 90% power
 //        addInstruction(TURN_ON_SHOOTER, 1.0);
         // Turn back to fire the rings into the top slot
-        addInstruction(TURN_TO, -3);
+//        addInstruction(TURN_TO, -3);
 //        // Give time for the shooter to come up to speed
 //        addInstruction(WAIT_FOR_TIME, 1000);
 //        // FIRE and wait 2 seconds for the trigger to sweep

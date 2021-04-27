@@ -9,6 +9,7 @@ import com.qualcomm.robotcore.util.Range;
 import com.qualcomm.robotcore.util.RobotLog;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.robotcore.external.navigation.Position;
 
 import static org.firstinspires.ftc.teamcode.UtilMovement.inchesToTicksForQuadStraightDrive;
 import static org.firstinspires.ftc.teamcode.UtilMovement.normalizeSpeedsForMinMaxValues;
@@ -278,6 +279,8 @@ public class MovementBehaviors {
         yPIDCalculator.reset();
         zPIDCalculator.reset();
 
+        sensorImu.startAccelerationIntegration();
+
         // Reset the motors so that the encoders are set to 0.
         motorsResetAndRunUsingEncoders();
 
@@ -286,6 +289,7 @@ public class MovementBehaviors {
         yTicks = yDistance != 0.0 ? (int)inchesToTicksForQuadStraightDrive(yDistance): 0;
 
         // Set PID targets for X, Y and Z
+        // RobotLog.i("xTicks = %d, yTicks = %d , Angle %f", xTicks, yTicks, zAngleToMaintain);
         xPIDCalculator.setTarget(xTicks, findXDisplacement());
         yPIDCalculator.setTarget(yTicks, findYDisplacement());
         zPIDCalculator.setTarget(zAngleToMaintain, getZAngleValue());
@@ -293,19 +297,32 @@ public class MovementBehaviors {
         // Perform PID Loop until we reach the targets
         while (this.opMode.opModeIsActive() && !distanceTargetReached(xTicks, yTicks) && runtime.seconds() <= timeOut) {
             //Feed the input device readings to corresponding PID calculators:
-            zpid = zPIDCalculator.getOutput(getZAngleValue(), GYRO);
-            xpid = xPIDCalculator.getOutput(findXDisplacement(), ENCODERS);
+            xpid = -1 * xPIDCalculator.getOutput(findXDisplacement(), ENCODERS);
             ypid = yPIDCalculator.getOutput(findYDisplacement(), ENCODERS);
+            zpid = zPIDCalculator.getOutput(getZAngleValue(), GYRO);
 
             // Calculate Speeds based on Inverse Kinematics
+            //RobotLog.i("xpid = %f, ypid = %f , zpid %f", xpid, ypid, zpid);
 
-            frontLeftSpeed = ypid - zpid + xpid;
-            frontRightSpeed = ypid + zpid - xpid;
-            rearLeftSpeed = ypid - zpid - xpid;
-            rearRightSpeed = ypid + zpid + xpid;
+            frontLeftSpeed = ypid - xpid + zpid;
+            frontRightSpeed = ypid + xpid - zpid;
+            rearLeftSpeed = ypid + xpid + zpid;
+            rearRightSpeed = ypid - xpid - zpid;
+
+            // float frontRight = leftY + leftX - gamepad1RightX;
+            // float frontLeft = leftY - leftX + gamepad1RightX;
+            // float backRight = leftY - leftX - gamepad1RightX;
+            // float backLeft = leftY + leftX + gamepad1RightX;
 
             // Normalize the Motor Speeds for Min and Max Values
-            motorPowers = normalizeSpeedsForMinMaxValues(frontLeftSpeed, frontRightSpeed, rearLeftSpeed, rearRightSpeed, 0.0, 1, targetPower);
+            motorPowers = normalizeSpeedsForMinMaxValues(
+                frontLeftSpeed, frontRightSpeed, rearLeftSpeed, rearRightSpeed, 0.0, 1, targetPower);
+
+//            RobotLog.i("Speeds (FL:%f, FR:%f, RL:%f, RR:%f)",
+//                motorPowers[0],
+//                motorPowers[1],
+//                motorPowers[2],
+//                motorPowers[3]);
 
             // Set Powers to corresponding Motors
             robot.frontLeftDrive.setPower(motorPowers[0]);
@@ -314,94 +331,12 @@ public class MovementBehaviors {
             robot.rearRightDrive.setPower(motorPowers[3]);
         }
 
+        sensorImu.stopAccelerationIntegration();
+
         //Brake once the PID loop is complete
         RobotLog.d("NerdBOT  - Displacement Before Stop : %s|xTarget | yTarget | xDisplacement | yDisplacement ", funcName);
         RobotLog.d("NerdBOT  - Displacement Before Stop : %s|%d|%d|%f|%f ", funcName, xTicks, yTicks, findXDisplacement(), findYDisplacement());
         stopWheels();
-    }
-
-    public void controlledDriveAtHeading(double distanceMm, double heading, double power)
-    {
-        double clippedPower = Range.clip(power, MIN_DRIVE_POWER, MAX_DRIVE_POWER);
-        setStraightDrivingModes();
-
-        double targetRadHeading = Math.toRadians(heading);
-        double angleX = Math.sin(targetRadHeading);
-        double angleY = Math.cos(targetRadHeading);
-
-        double sumOfAllPositionDeltas = 99999;
-        int timeoutInMs = 1000;
-        int clippedTimeoutInMs = Math.max(timeoutInMs, 0);
-
-        ElapsedTime elapsedTime = new ElapsedTime();
-        sensorImu.startAccelerationIntegration();
-
-        while (true
-            && !opMode.isStopRequested()
-            && elapsedTime.milliseconds() < clippedTimeoutInMs) {
-
-            double headingError = getError(heading);
-
-            // Adjust based on angle of field
-            double angleOfFieldInDegrees = sensorImu.getAngle();
-            double angleOfFieldInRadians = Math.toRadians(angleOfFieldInDegrees);
-
-            double leftX = 0; //Math.sin(targetRadHeading);
-            double leftY = 1;//-Math.cos(targetRadHeading);
-
-            // float refAngle = (float)targetRadHeading;
-
-            // float leftX = (float) (gamepad1LeftX * Math.cos(refAngle) + gamepad1LeftY * Math.sin(refAngle));
-            // float leftY = (float) (gamepad1LeftY * Math.cos(refAngle) - gamepad1LeftX * Math.sin(refAngle));
-
-            double frontRight = leftY + leftX;
-            double frontLeft = leftY - leftX;
-            double backRight = leftY - leftX;
-            double backLeft = leftY + leftX;
-
-            // clip the right/left values so that the values never exceed +/- 1
-            frontRight = Range.clip(frontRight, -1, 1) * power/2;
-            frontLeft = Range.clip(frontLeft, -1, 1) * power/2;
-            backLeft = Range.clip(backLeft, -1, 1) * power/2;
-            backRight = Range.clip(backRight, -1, 1) * power/2;
-
-            // write the values to the motors
-            robot.frontRightDrive.setPower(frontRight);
-            robot.frontLeftDrive.setPower(frontLeft);
-            robot.rearLeftDrive.setPower(backLeft);
-            robot.rearRightDrive.setPower(backRight);
-
-            // int targetPositionForward = (int)(distanceMm * TICKS_PER_MILLIMETER * angleY);
-            // int targetPositionRight = -(int)(distanceMm * TICKS_PER_MILLIMETER * angleX);
-            // int frontRightTarget = robot.frontRightDrive.getCurrentPosition() + targetPositionForward + targetPositionRight;
-            // int frontLeftTarget = robot.frontLeftDrive.getCurrentPosition() + targetPositionForward - targetPositionRight;
-            // int rearRightTarget = robot.rearRightDrive.getCurrentPosition() + targetPositionForward - targetPositionRight;
-            // int rearLeftTarget = robot.rearLeftDrive.getCurrentPosition() + targetPositionForward + targetPositionRight;
-
-            // // robot.frontRightDrive.setTargetPosition(frontRightTarget);
-            // // robot.frontLeftDrive.setTargetPosition(frontLeftTarget);
-            // // robot.rearRightDrive.setTargetPosition(rearRightTarget);
-            // // robot.rearLeftDrive.setTargetPosition(rearLeftTarget);
-
-            // int frontRightActual = robot.frontRightDrive.getCurrentPosition();
-            // int frontLeftActual = robot.frontLeftDrive.getCurrentPosition();
-            // int rearRightActual = robot.rearRightDrive.getCurrentPosition();
-            // int rearLeftActual = robot.rearLeftDrive.getCurrentPosition();
-
-            // sumOfAllPositionDeltas = Math.abs(frontRightActual - frontRightTarget)
-            //     + Math.abs(frontLeftActual - frontLeftTarget)
-            //     + Math.abs(rearRightActual - rearRightTarget)
-            //     + Math.abs(rearLeftActual - rearLeftTarget);
-
-            RobotLog.i(sensorImu.getPosition().toString());
-        }
-
-        robot.frontRightDrive.setPower(0);
-        robot.frontLeftDrive.setPower(0);
-        robot.rearLeftDrive.setPower(0);
-        robot.rearRightDrive.setPower(0);
-
-        sensorImu.stopAccelerationIntegration();
     }
 
     public void driveForTime(double forward, double right, double msToRun)
@@ -567,14 +502,40 @@ public class MovementBehaviors {
 
     //Function to find out the Robot travel distance in X direction.
     double findXDisplacement() {
-        return (robot.frontLeftDrive.getCurrentPosition() - robot.frontRightDrive.getCurrentPosition()
-            -robot.rearLeftDrive.getCurrentPosition() + robot.rearRightDrive.getCurrentPosition())/4.0;
+        // Position position = sensorImu.getPosition();
+        // double xDisplacement = position.x;
+        // double yDisplacement = position.y;
+        // double zDisplacement = position.z;
+        double fl = robot.frontLeftDrive.getCurrentPosition();
+        double fr = robot.frontRightDrive.getCurrentPosition();
+        double rl = robot.rearLeftDrive.getCurrentPosition();
+        double rr = robot.rearRightDrive.getCurrentPosition();
+
+        double xDisplacement = (fl - fr - rl + rr)/4.0;
+
+//        RobotLog.i("xDisplacement %f (%f, %f, %f, %f)", xDisplacement, fl, fr, rl, rr);
+        // RobotLog.i("xDisplacement %f, (%f), %f", xDisplacement, yDisplacement, zDisplacement);
+        return xDisplacement;
     }
 
     //Function to find out the Robot travel distance in Y direction.
     double findYDisplacement() {
-        return (robot.frontLeftDrive.getCurrentPosition() + robot.frontRightDrive.getCurrentPosition()
-            + robot.rearLeftDrive.getCurrentPosition() + robot.rearRightDrive.getCurrentPosition())/4.0;
+        double fl = robot.frontLeftDrive.getCurrentPosition();
+        double fr = robot.frontRightDrive.getCurrentPosition();
+        double rl = robot.rearLeftDrive.getCurrentPosition();
+        double rr = robot.rearRightDrive.getCurrentPosition();
+
+        double yDisplacement = (fl + fr + rl + rr)/4.0;
+
+//        RobotLog.i("yDisplacement %f (%f, %f, %f, %f)", yDisplacement, fl, fr, rl, rr);
+
+        // Position position = sensorImu.getPosition();
+
+        // return position.x;
+
+        // return (robot.frontLeftDrive.getCurrentPosition() + robot.frontRightDrive.getCurrentPosition()
+        //     + robot.rearLeftDrive.getCurrentPosition() + robot.rearRightDrive.getCurrentPosition())/4.0;
+        return yDisplacement;
     }
 
 
