@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import java.util.ArrayList;
 
 import static org.firstinspires.ftc.teamcode.MovementInstruction.InstructionType.DRIVE_DISTANCE;
+import static org.firstinspires.ftc.teamcode.MovementInstruction.InstructionType.DRIVE_PID_DISTANCE;
 import static org.firstinspires.ftc.teamcode.MovementInstruction.InstructionType.FIRE_RING;
 import static org.firstinspires.ftc.teamcode.MovementInstruction.InstructionType.LOWER_WOBBLE_ARM;
 import static org.firstinspires.ftc.teamcode.MovementInstruction.InstructionType.RAISE_WOBBLE_ARM;
@@ -75,9 +76,9 @@ public class OpModeOfficialAuton extends LinearOpMode {
             distance_std = DISTANCE_STD_10645;
         }
 
-        // XXX:
-        heading_comp = 0;
-        distance_std = 0.5;
+//        // XXX:
+//        heading_comp = 0;
+//        distance_std = 0.5;
 
         // Send telemetry message to signify robot waiting;
         telemetry.addData("Status", "Reticulating splines...");    //
@@ -152,6 +153,12 @@ public class OpModeOfficialAuton extends LinearOpMode {
                 nextState = doDriveToC(timesRun);
             } else {
                 nextState = doStop(timesRun);
+
+                // In case we don't get a chance to break the loop,
+                // store it when we go to stop state.
+                UtilBotStorage.sharedInstance().setItem(
+                    UtilBotStorage.LAST_GYRO_ANGLE,
+                    sensorImu.getAngle());
             }
 
             timesRun++;
@@ -159,6 +166,13 @@ public class OpModeOfficialAuton extends LinearOpMode {
             telemetry.update();
             idle();
         }
+
+        visionManager.shutdown();
+
+        // Save angle across opmodes
+        UtilBotStorage.sharedInstance().setItem(
+            UtilBotStorage.LAST_GYRO_ANGLE,
+            sensorImu.getAngle());
     }
 
     private AutonState doStart(long timesRun) {
@@ -210,7 +224,7 @@ public class OpModeOfficialAuton extends LinearOpMode {
     }
 
     private void queueStandardFiringSequence() {
-        addInstruction(DRIVE_DISTANCE, distance_std * MM_PER_FOOT, heading_comp, 0.75);
+        addInstruction(DRIVE_PID_DISTANCE, distance_std * MM_PER_FOOT, heading_comp, 0.75);
 //        // Turn on shooter at 90% power
 //        addInstruction(TURN_ON_SHOOTER, 1.0);
         // Turn back to fire the rings into the top slot

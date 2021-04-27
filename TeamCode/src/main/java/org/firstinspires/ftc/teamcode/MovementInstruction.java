@@ -83,8 +83,22 @@ public class MovementInstruction {
 
                     // distance and angle and power
                     case 3:
-                        behaviors.nerdPidDrive(0, parameters[0], parameters[1], parameters[2], 10);
-//                        behaviors.driveDistance(parameters[0], parameters[1], parameters[2]);
+                        behaviors.driveDistance(parameters[0], parameters[1], parameters[2]);
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+        }),
+
+        DRIVE_PID_DISTANCE(new Action() {
+            @Override
+            public void execute(MovementBehaviors behaviors, double... parameters) {
+                switch (parameters.length) {
+                    // distance and angle and power
+                    case 4:
+                        behaviors.nerdPidDrive(parameters[0], parameters[1], parameters[2], parameters[3], 10);
                         break;
 
                     default:

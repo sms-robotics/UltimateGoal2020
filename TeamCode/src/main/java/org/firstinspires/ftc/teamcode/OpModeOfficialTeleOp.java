@@ -26,6 +26,9 @@ import com.qualcomm.robotcore.util.Range;
 import static org.firstinspires.ftc.teamcode.SoundManager.Sound.BAD;
 import static org.firstinspires.ftc.teamcode.SoundManager.Sound.COIN;
 import static org.firstinspires.ftc.teamcode.SoundManager.Sound.OK;
+import static org.firstinspires.ftc.teamcode.SoundManager.Sound.GAMEOVER;
+import static org.firstinspires.ftc.teamcode.SoundManager.Sound.ONEUP;
+import static org.firstinspires.ftc.teamcode.UtilBotStorage.LAST_GYRO_ANGLE;
 import static org.firstinspires.ftc.teamcode.UtilMovement.normalizeSpeedsForMinMaxValues;
 
 /**
@@ -54,6 +57,9 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
     boolean previousA = false;
     boolean previousY = false;
     boolean imuSteer = true;
+    boolean played45SecSound = false;
+    boolean played30SecSound = false;
+
     ElapsedTime runtime = new ElapsedTime();
 
     @Override
@@ -86,14 +92,20 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
 
         soundManager.play(OK);
 
+        movement.setStraightDrivingModes();
+
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
 
+        UtilBotStorage.Item lastGyroAngle = UtilBotStorage.sharedInstance().getItem(LAST_GYRO_ANGLE);
+
         runtime.reset();
 
-        // IMPORTANT: we don't want to init the angle because
-        // we don't know where auton left it
-        //imu.resetAngle();
+        if (lastGyroAngle.isValid() && lastGyroAngle.secondsSinceSaved() < (2.5 * 60)) {
+            imu.resetAngleTo((Long)lastGyroAngle.value);
+        } else {
+            imu.resetAngle();
+        }
 
         // Wherever the wobble arm is when you press PLAY is where
         // it thinks "zero" is
@@ -106,11 +118,19 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
         shooter.turnOff();
         conveyor.turnOff();
 
-//        movement.setStraightDrivingModes();
-
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
             visionManager.loop();
+
+            if (runtime.seconds() > (150-45) && !played45SecSound){
+                played45SecSound = true;
+                soundManager.play(ONEUP);
+            }
+
+            if (runtime.seconds() > (150-30) && !played30SecSound){
+                played30SecSound = true;
+                soundManager.play(GAMEOVER);
+            }
 
             float gamepad1LeftY = gamepad1.left_stick_y;
             float gamepad1LeftX = gamepad1.left_stick_x;
@@ -288,6 +308,7 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
 
             telemetry.addData("Shooter Speed", "%.03f", shooter.getSpeed());
             telemetry.addData("Angle", "%.03f", angleOfFieldInDegrees);
+            telemetry.addData("Time", "%.03f", runtime.seconds());
 //            telemetry.addData("Mode", imuSteer ? "IMU" : "Normal");
             double[] lastComputedLocation = visionManager.getLastComputedLocationFiltered();
             if (lastComputedLocation == null) {

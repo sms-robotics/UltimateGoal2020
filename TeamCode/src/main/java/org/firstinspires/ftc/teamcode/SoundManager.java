@@ -20,7 +20,9 @@ public class SoundManager {
         CONFIRM("confirm.wav"),
         COIN("coin.wav"),
         UNLOCKED("unlocked.wav"),
-        WAKEUP("sweep.wav");
+        WAKEUP("sweep.wav"),
+        ONEUP("unlocked.wav"),
+        GAMEOVER("mario-game-over.wav");
 
         private final String soundFileName;
 

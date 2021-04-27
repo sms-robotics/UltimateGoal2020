@@ -100,4 +100,9 @@ public class SensorIMU {
         globalAngle = 0;
     }
 
+    public void resetAngleTo(long valueInDegrees) {
+        resetAngle();
+
+        globalAngle = valueInDegrees;
+    }
 }
