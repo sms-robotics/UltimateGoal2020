@@ -110,8 +110,8 @@ public class MovementInstruction {
         TURN_TO(new Action() {
             @Override
             public void execute(MovementBehaviors behaviors, double... parameters) {
-                behaviors.nerdPidTurn(parameters[0]);
-//                behaviors.turnTo(parameters[0]);
+//                behaviors.nerdPidTurn(parameters[0]);
+                behaviors.turnTo(parameters[0]);
             }
         }),
 

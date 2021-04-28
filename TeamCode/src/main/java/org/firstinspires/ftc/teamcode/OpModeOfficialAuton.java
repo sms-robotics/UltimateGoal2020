@@ -227,28 +227,28 @@ public class OpModeOfficialAuton extends LinearOpMode {
     }
 
     private void queueStandardFiringSequence() {
-        addInstruction(DRIVE_PID_DISTANCE, 0, distance_std * MM_PER_FOOT, heading_comp, 0.75);
-//        // Turn on shooter at 90% power
-//        addInstruction(TURN_ON_SHOOTER, 1.0);
+        addInstruction(DRIVE_DISTANCE, distance_std * MM_PER_FOOT, heading_comp, 0.75);
+        // Turn on shooter at 90% power
+        addInstruction(TURN_ON_SHOOTER, 1.0);
         // Turn back to fire the rings into the top slot
-//        addInstruction(TURN_TO, -3);
-//        // Give time for the shooter to come up to speed
-//        addInstruction(WAIT_FOR_TIME, 1000);
-//        // FIRE and wait 2 seconds for the trigger to sweep
-//        addInstruction(FIRE_RING);
-//        // Turn on conveyor at 75% power
-//        addInstruction(TURN_ON_CONVEYOR, 0.75);
-//        // The first ring is right there
-//        addInstruction(WAIT_FOR_TIME, 1500);
-//        // FIRE and wait 2 seconds for the trigger to sweep
-//        addInstruction(FIRE_RING);
-//        // Wait three seconds
-//        addInstruction(WAIT_FOR_TIME, 1600);
-//        // FIRE and wait 2 seconds for the trigger to sweep up and back
-//        addInstruction(FIRE_RING);
-//        // Turn these off while we park
-//        addInstruction(TURN_OFF_SHOOTER);
-//        addInstruction(TURN_OFF_CONVEYOR);
+        addInstruction(TURN_TO, -3);
+        // Give time for the shooter to come up to speed
+        addInstruction(WAIT_FOR_TIME, 800);
+        // FIRE and wait 2 seconds for the trigger to sweep
+        addInstruction(FIRE_RING);
+        // Turn on conveyor at 75% power
+        addInstruction(TURN_ON_CONVEYOR, 0.75);
+        // The first ring is right there
+        addInstruction(WAIT_FOR_TIME, 1000);
+        // FIRE and wait 2 seconds for the trigger to sweep
+        addInstruction(FIRE_RING);
+        // Wait three seconds
+        addInstruction(WAIT_FOR_TIME, 1000);
+        // FIRE and wait 2 seconds for the trigger to sweep up and back
+        addInstruction(FIRE_RING);
+        // Turn these off while we park
+        addInstruction(TURN_OFF_SHOOTER);
+        addInstruction(TURN_OFF_CONVEYOR);
     }
 
     // DRIVE_TO_A:
