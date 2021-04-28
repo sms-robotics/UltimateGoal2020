@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.util.RobotLog;
 public class ActionTrigger {
     static final double STARTING_POSITION = 0;
     static final double TRIGGER_RESET_POSITION = STARTING_POSITION;
-    static final double TRIGGER_MAX_POSITION = 0.5;
+    static final double TRIGGER_MAX_POSITION = 0.13;
     static final double POINT_OF_RETURN_POSITION = TRIGGER_MAX_POSITION * 0.95;
 
     private final Servo triggerMotor;
