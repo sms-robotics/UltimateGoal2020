@@ -76,10 +76,6 @@ public class OpModeOfficialAuton extends LinearOpMode {
             distance_std = DISTANCE_STD_10645;
         }
 
-//        // XXX:
-//        heading_comp = 0;
-//        distance_std = 0.5;
-
         // Send telemetry message to signify robot waiting;
         telemetry.addData("Status", "Reticulating splines...");    //
         telemetry.update();
@@ -156,12 +152,6 @@ public class OpModeOfficialAuton extends LinearOpMode {
                 nextState = doDriveToC(timesRun);
             } else {
                 nextState = doStop(timesRun);
-
-                // In case we don't get a chance to break the loop,
-                // store it when we go to stop state.
-                UtilBotStorage.sharedInstance().setItem(
-                    UtilBotStorage.LAST_GYRO_ANGLE,
-                    sensorImu.getAngle());
             }
 
             timesRun++;
@@ -171,11 +161,6 @@ public class OpModeOfficialAuton extends LinearOpMode {
         }
 
         visionManager.shutdown();
-
-        // Save angle across opmodes
-        UtilBotStorage.sharedInstance().setItem(
-            UtilBotStorage.LAST_GYRO_ANGLE,
-            sensorImu.getAngle());
     }
 
     private AutonState doStart(long timesRun) {
@@ -315,6 +300,14 @@ public class OpModeOfficialAuton extends LinearOpMode {
     }
 
     private AutonState doStop(long timesRun) {
+        if (timesRun == 0) {
+            // In case we don't get a chance to break the loop,
+            // store it when we go to stop state.
+            UtilBotStorage.sharedInstance().setItem(
+                UtilBotStorage.LAST_GYRO_ANGLE,
+                sensorImu.getAngle());
+        }
+
         if (gamepad1.x) {
             return AutonState.START;
         }

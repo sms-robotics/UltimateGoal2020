@@ -92,7 +92,7 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
 
         soundManager.play(OK);
 
-        movement.setStraightDrivingModes();
+//        movement.setStraightDrivingModes();
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
