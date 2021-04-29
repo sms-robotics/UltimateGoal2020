@@ -100,7 +100,7 @@ public class UtilBotStorage {
         return botStorage;
     }
 
-    private boolean load() {
+    public boolean load() {
         File dataFile = new File(dataDirectory, dataFileName);
         RobotLog.d("Attempting to load data from %s", dataFile);
 

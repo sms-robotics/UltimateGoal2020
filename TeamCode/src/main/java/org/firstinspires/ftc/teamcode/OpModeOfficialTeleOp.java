@@ -19,6 +19,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.util.RobotLog;
+import com.qualcomm.robotcore.robot.Robot;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
@@ -92,12 +94,12 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
 
         soundManager.play(OK);
 
-//        movement.setStraightDrivingModes();
+        UtilBotStorage.sharedInstance().load();
+        UtilBotStorage.Item lastGyroAngle = UtilBotStorage.sharedInstance().getItem(LAST_GYRO_ANGLE);
+        RobotLog.i("lastGyroAngle: %s %s %s", lastGyroAngle.isValid(), lastGyroAngle.value, lastGyroAngle.secondsSinceSaved());
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
-
-        UtilBotStorage.Item lastGyroAngle = UtilBotStorage.sharedInstance().getItem(LAST_GYRO_ANGLE);
 
         runtime.reset();
 
@@ -122,12 +124,12 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
         while (opModeIsActive()) {
             visionManager.loop();
 
-            if (runtime.seconds() > (150-45) && !played45SecSound){
+            if (runtime.seconds() > (120-45) && !played45SecSound){
                 played45SecSound = true;
                 soundManager.play(ONEUP);
             }
 
-            if (runtime.seconds() > (150-30) && !played30SecSound){
+            if (runtime.seconds() > (120-30) && !played30SecSound){
                 played30SecSound = true;
                 soundManager.play(GAMEOVER);
             }
@@ -268,7 +270,7 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
             if (gamepad2.b){
                 shooter.turnOff();
             } else if (gamepad2.a){
-                shooter.turnOnAtPower(1.0);
+                shooter.turnOnAtPower(0.95);
             } else if (gamepad2.x){
                 shooter.turnOnAtPower(0.65);
             }

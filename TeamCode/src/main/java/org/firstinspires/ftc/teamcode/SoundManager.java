@@ -66,7 +66,7 @@ public class SoundManager {
 //            soundPlayer.preload(this.hardwareMap.appContext, entry.getValue());
 //        }
 
-        play(Sound.WAKEUP);
+        play(Sound.COIN);
     }
 
     public void play(Sound sound) {
