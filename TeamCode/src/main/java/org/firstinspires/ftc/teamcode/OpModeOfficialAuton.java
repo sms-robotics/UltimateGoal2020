@@ -22,9 +22,9 @@ import static org.firstinspires.ftc.teamcode.SoundManager.Sound.ONEUP;
 @Autonomous(name="SMS Auton", group="Production")
 public class OpModeOfficialAuton extends LinearOpMode {
     private static final double MM_PER_FOOT = 304.8;
-    private static final double HEADING_COMP_10644 = 4;
+    private static final double HEADING_COMP_10644 = 3;
     private static final double HEADING_COMP_10645 = 4;
-    private static final double DISTANCE_STD_10644 = 5.2;
+    private static final double DISTANCE_STD_10644 = 5.05;
     private static final double DISTANCE_STD_10645 = 4.7;
 
     private double heading_comp = HEADING_COMP_10644;
@@ -75,7 +75,9 @@ public class OpModeOfficialAuton extends LinearOpMode {
         if ("10645".equalsIgnoreCase(whichBot)) {
             heading_comp = HEADING_COMP_10645;
             distance_std = DISTANCE_STD_10645;
-            telemetry.addData("Bot", "10645...");
+        } else {
+            heading_comp = HEADING_COMP_10644;
+            distance_std = DISTANCE_STD_10644;
         }
 
         // Send telemetry message to signify robot waiting;
@@ -220,7 +222,7 @@ public class OpModeOfficialAuton extends LinearOpMode {
         // Turn back to fire the rings into the top slot
         addInstruction(TURN_TO, -3);
         // Give time for the shooter to come up to speed
-        addInstruction(WAIT_FOR_TIME, 1200);
+        addInstruction(WAIT_FOR_TIME, 1300);
         // FIRE and wait 2 seconds for the trigger to sweep
         addInstruction(FIRE_RING);
         // Turn on conveyor at 75% power

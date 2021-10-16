@@ -74,18 +74,17 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
         ActionTrigger trigger = robot.createAndInitializeTrigger();
         ActionWobbleArm wobbleArm = robot.createAndInitializeWobbleArm(this);
         SensorIMU imu = robot.createAndInitializeIMU(this);
-        VisionWebcamScanner webcamScanner = robot.createAndInitializeWebcamScanner();
+//        VisionWebcamScanner webcamScanner = robot.createAndInitializeWebcamScanner();
 
         SoundManager soundManager = robot.createAndInitializeSoundManager();
 
         MovementBehaviors movement = robot.createAndInitializeMovementBehaviors(this, conveyor, shooter, trigger, wobbleArm, imu);
-        VisionManager visionManager = robot.createAndInitializeVisionManager();
+//        VisionManager visionManager = robot.createAndInitializeVisionManager();
+//        visionManager.setEnableObjectDetection(false);
+//        visionManager.setDebugImageCaptureEnabled(false);
+//        visionManager.activate();
 
-        visionManager.setEnableObjectDetection(false);
-        visionManager.setDebugImageCaptureEnabled(false);
-        visionManager.activate();
-
-        webcamScanner.goToNeutral();
+//        webcamScanner.goToNeutral();
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -104,7 +103,7 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
         runtime.reset();
 
         if (lastGyroAngle.isValid() && lastGyroAngle.secondsSinceSaved() < (2.5 * 60)) {
-            imu.resetAngleTo((double)lastGyroAngle.value);
+            imu.resetAngleTo(((Number)lastGyroAngle.value).doubleValue());
         } else {
             imu.resetAngle();
         }
@@ -122,7 +121,7 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
-            visionManager.loop();
+//            visionManager.loop();
 
             if (runtime.seconds() > (120-45) && !played45SecSound){
                 played45SecSound = true;
@@ -181,61 +180,61 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
             // Have to keep track of whether the auto-move is doing the
             // work or whether we're using the other joystick inputs
             boolean handledMovement = false;
-            if (gamepad1.left_bumper) {
-                double[] desiredPosition = new double[] {/*X:*/1050.0, 0, /*Y:*/1540.0};
-                double[] lastComputedLocation = visionManager.getLastComputedLocationFiltered();
-                double lastSawTarget = visionManager.getHowManySecondsAgoSawBlueTarget();
-                if (lastComputedLocation != null && lastSawTarget < 1.0) {
-                    soundManager.play(COIN);
-
-                    handledMovement = true;
-
-                    double deltaX = -1 * (lastComputedLocation[0] - desiredPosition[0]);
-                    double deltaY = (lastComputedLocation[2] - desiredPosition[2]);
-                    double deltaTheta = lastComputedLocation[3] - Math.toRadians(90.0);
-
-                    double distanceToTravel = Math.sqrt(deltaX*deltaX + deltaY*deltaY);
-                    double angleToTravel = 0;
-                    String q = "?";
-
-                    if (deltaX > 0) {
-                        if (deltaY > 0) {
-                            q = "Q1";
-                            // Quadrant 1, need to move right and forward
-                            angleToTravel = Math.atan(deltaX / deltaY);
-                        } else {
-                            q = "Q2";
-                            // Quadrant 2, need to move right and back
-                            angleToTravel = Math.atan(-1 * deltaY / deltaX) + (Math.PI/2);
-                        }
-                    } else {
-                        if (deltaY > 0) {
-                            q = "Q4";
-                            // Quadrant 4, need to move left and forward
-                            angleToTravel = Math.atan(deltaY / (-1 * deltaX)) + (3 * Math.PI / 2);
-                        } else {
-                            q = "Q3";
-                            // Quadrant 3, need to move left and back
-                            angleToTravel = Math.atan((-1 * deltaX) / (-1 * deltaY)) + Math.PI;
-                        }
-                    }
-
-                    double angleToFace = deltaTheta;
-                    double seekPower = 0.6;
-                    double drivePower = Range.clip(seekPower * Range.clip(distanceToTravel / 400, 0.01, seekPower), 0, seekPower);
-                    double turnPower = Range.clip(seekPower * Range.clip(deltaTheta, 0.05, seekPower), 0, seekPower);
-
-                    telemetry.addLine()
-                        .addData("DX", deltaX)
-                        .addData("DY", deltaY)
-                        .addData("A", angleToFace);
-
-                    movement.driveInDirection(angleToTravel, angleToFace, drivePower, turnPower);
-                } else {
-                    // No lock on the target
-                    soundManager.play(BAD);
-                }
-            }
+//            if (gamepad1.left_bumper) {
+//                double[] desiredPosition = new double[] {/*X:*/1050.0, 0, /*Y:*/1540.0};
+//                double[] lastComputedLocation = visionManager.getLastComputedLocationFiltered();
+//                double lastSawTarget = visionManager.getHowManySecondsAgoSawBlueTarget();
+//                if (lastComputedLocation != null && lastSawTarget < 1.0) {
+//                    soundManager.play(COIN);
+//
+//                    handledMovement = true;
+//
+//                    double deltaX = -1 * (lastComputedLocation[0] - desiredPosition[0]);
+//                    double deltaY = (lastComputedLocation[2] - desiredPosition[2]);
+//                    double deltaTheta = lastComputedLocation[3] - Math.toRadians(90.0);
+//
+//                    double distanceToTravel = Math.sqrt(deltaX*deltaX + deltaY*deltaY);
+//                    double angleToTravel = 0;
+//                    String q = "?";
+//
+//                    if (deltaX > 0) {
+//                        if (deltaY > 0) {
+//                            q = "Q1";
+//                            // Quadrant 1, need to move right and forward
+//                            angleToTravel = Math.atan(deltaX / deltaY);
+//                        } else {
+//                            q = "Q2";
+//                            // Quadrant 2, need to move right and back
+//                            angleToTravel = Math.atan(-1 * deltaY / deltaX) + (Math.PI/2);
+//                        }
+//                    } else {
+//                        if (deltaY > 0) {
+//                            q = "Q4";
+//                            // Quadrant 4, need to move left and forward
+//                            angleToTravel = Math.atan(deltaY / (-1 * deltaX)) + (3 * Math.PI / 2);
+//                        } else {
+//                            q = "Q3";
+//                            // Quadrant 3, need to move left and back
+//                            angleToTravel = Math.atan((-1 * deltaX) / (-1 * deltaY)) + Math.PI;
+//                        }
+//                    }
+//
+//                    double angleToFace = deltaTheta;
+//                    double seekPower = 0.6;
+//                    double drivePower = Range.clip(seekPower * Range.clip(distanceToTravel / 400, 0.01, seekPower), 0, seekPower);
+//                    double turnPower = Range.clip(seekPower * Range.clip(deltaTheta, 0.05, seekPower), 0, seekPower);
+//
+//                    telemetry.addLine()
+//                        .addData("DX", deltaX)
+//                        .addData("DY", deltaY)
+//                        .addData("A", angleToFace);
+//
+//                    movement.driveInDirection(angleToTravel, angleToFace, drivePower, turnPower);
+//                } else {
+//                    // No lock on the target
+//                    soundManager.play(BAD);
+//                }
+//            }
 
             if (!handledMovement) {
                 // holonomic formulas
@@ -282,18 +281,18 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
             }
 
             // Job #2: ARM
-            boolean dpad_check;
-            dpad_check = gamepad2.dpad_left;
-            if (dpad_check && (dpad_check != previousDPL)) {
-                shooter.speedDown();
-            }
-            previousDPL = dpad_check;
+            // boolean dpad_check;
+            // dpad_check = gamepad2.dpad_left;
+            // if (dpad_check && (dpad_check != previousDPL)) {
+            //     shooter.speedDown();
+            // }
+            // previousDPL = dpad_check;
 
-            dpad_check = gamepad2.dpad_right;
-            if (dpad_check && (dpad_check != previousDPR)) {
-                shooter.speedUp();
-            }
-            previousDPR = dpad_check;
+            // dpad_check = gamepad2.dpad_right;
+            // if (dpad_check && (dpad_check != previousDPR)) {
+            //     shooter.speedUp();
+            // }
+            // previousDPR = dpad_check;
 
             /// Job #4: Trigger
             if(gamepad2.right_bumper){
@@ -312,18 +311,18 @@ public class OpModeOfficialTeleOp extends LinearOpMode {
             telemetry.addData("Angle", "%.03f", angleOfFieldInDegrees);
             telemetry.addData("Time", "%.03f", runtime.seconds());
 //            telemetry.addData("Mode", imuSteer ? "IMU" : "Normal");
-            double[] lastComputedLocation = visionManager.getLastComputedLocationFiltered();
-            if (lastComputedLocation == null) {
-                telemetry.addData("Position                        ", "Unknown");
-            } else {
-                telemetry.addData("Position X                      ", String.format("%.1f", lastComputedLocation[0]));
-                telemetry.addData("Position Y                      ", String.format("%.1f", lastComputedLocation[2]));
-                telemetry.addData("Position A                      ", String.format("%.1f", Math.toDegrees(lastComputedLocation[3])));
-            }
+//            double[] lastComputedLocation = visionManager.getLastComputedLocationFiltered();
+//            if (lastComputedLocation == null) {
+//                telemetry.addData("Position                        ", "Unknown");
+//            } else {
+//                telemetry.addData("Position X                      ", String.format("%.1f", lastComputedLocation[0]));
+//                telemetry.addData("Position Y                      ", String.format("%.1f", lastComputedLocation[2]));
+//                telemetry.addData("Position A                      ", String.format("%.1f", Math.toDegrees(lastComputedLocation[3])));
+//            }
 
             telemetry.update();
         }
 
-        visionManager.shutdown();
+//        visionManager.shutdown();
     }
 }
